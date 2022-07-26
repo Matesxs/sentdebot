@@ -123,7 +123,7 @@ def truncate_string(string: str, limit: int, ellipsis :str="…", from_beginning
   else:
     return string[:limit - len(ellipsis)] + ellipsis
 
-def get_user_stats(guild):
+def get_user_stats(guild) -> Tuple[int, int, int]:
   members = guild.members
 
   online, idle, offline = 0, 0, 0

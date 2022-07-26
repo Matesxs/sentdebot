@@ -21,11 +21,11 @@ class Common(Base_Cog):
 
     self.pet_cache = cachetools.LRUCache(maxsize=20)
 
-  @commands.command(name="invite")
+  @commands.command(name="invite", brief="Send invite link")
   @cooldowns.long_cooldown
   async def invite_link(self, ctx: commands.Context):
     await general_util.delete_message(self.bot, ctx)
-    await ctx.send("https://discord.com/oauth2/authorize?client_id=998191988312657960&permissions=1634705341648&scope=bot")
+    await ctx.send("https://discord.com/oauth2/authorize?client_id=998191988312657960&permissions=1567096171606&scope=bot")
 
   @commands.message_command(name="Pin message")
   @commands.check(general_util.is_mod)
@@ -33,6 +33,7 @@ class Common(Base_Cog):
     try:
       if message.pinned:
         await message.unpin(reason=f"{inter.author} unpinned message")
+        await general_util.generate_success_message(inter, "Message pinned")
       else:
         await message.pin(reason=f"{inter.author} pinned message")
     except disnake.Forbidden:
@@ -87,7 +88,7 @@ class Common(Base_Cog):
 
   @commands.slash_command(name="pet", description=Strings.common_pet_brief)
   @cooldowns.short_cooldown
-  async def pet(self, inter: disnake.ApplicationCommandInteraction, user: disnake.Member = commands.Param(default=None, description="User to pet")):
+  async def pet(self, inter: disnake.CommandInteraction, user: disnake.Member = commands.Param(default=None, description="User to pet")):
     if user is None:
       user = inter.author
 
@@ -135,14 +136,14 @@ class Common(Base_Cog):
     await inter.response.send_message(file=disnake.File(fp=image_binary, filename="pet.gif"))
 
   @pet.error
-  async def pet_error(self, inter: disnake.ApplicationCommandInteraction, error):
+  async def pet_error(self, inter: disnake.CommandInteraction, error):
     if isinstance(error, commands.MemberNotFound):
       await inter.response.send_message(Strings.common_pet_user_not_found)
       return True
 
   @commands.slash_command(name="vote", description=Strings.common_vote_brief)
   @cooldowns.long_cooldown
-  async def pet(self, inter: disnake.ApplicationCommandInteraction):
+  async def vote_command(self, inter: disnake.CommandInteraction):
     await inter.response.send_modal(VoteSetupModal())
 
 def setup(bot):

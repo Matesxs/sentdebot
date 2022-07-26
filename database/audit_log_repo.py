@@ -5,7 +5,7 @@ from typing import Optional, Union
 
 from database import session
 from database.tables.audit_log import AuditLogItemType, AuditLog
-from database.users_repo import create_user_if_not_exist
+from database.users_repo import get_or_create_member_if_not_exist
 from database.messages_repo import Message
 
 async def create_message_edited_log(bot: commands.Bot, before: Optional[Union[disnake.Message, Message]], after: disnake.Message) -> AuditLog:
@@ -15,7 +15,7 @@ async def create_message_edited_log(bot: commands.Bot, before: Optional[Union[di
     thread = channel
     channel = channel.parent
 
-  create_user_if_not_exist(after.author)
+  get_or_create_member_if_not_exist(after.author)
   if before is not None and isinstance(before, Message):
     before = await before.to_object(bot)
 
@@ -29,7 +29,7 @@ async def create_message_edited_log(bot: commands.Bot, before: Optional[Union[di
     "attachments_after": [att.url for att in after.attachments]
   }
 
-  item = AuditLog(timestamp=after.edited_at, user_id=str(after.author.id), log_type=AuditLogItemType.MESSAGE_EDITED, data=data)
+  item = AuditLog(timestamp=after.edited_at, user_id=str(after.author.id), guild_id=str(after.guild.id) if after.guild is not None else None, log_type=AuditLogItemType.MESSAGE_EDITED, data=data)
   session.add(item)
   session.commit()
 
@@ -46,7 +46,7 @@ def create_message_deleted_log(message: disnake.Message) -> AuditLog:
   content = message.content
   attachments = [att.url for att in message.attachments]
 
-  create_user_if_not_exist(message.author)
+  get_or_create_member_if_not_exist(message.author)
 
   data = {
     "message_id": message_id,
@@ -56,7 +56,7 @@ def create_message_deleted_log(message: disnake.Message) -> AuditLog:
     "attachments": attachments
   }
 
-  item = AuditLog(user_id=author_id, log_type=AuditLogItemType.MESSAGE_DELETED, data=data)
+  item = AuditLog(user_id=author_id, guild_id=str(message.guild.id) if message.guild is not None else None, log_type=AuditLogItemType.MESSAGE_DELETED, data=data)
   session.add(item)
   session.commit()
 
@@ -72,16 +72,20 @@ def create_member_changed_log(before: disnake.Member, after: disnake.Member, com
     data["avatar_url_before"] = before.display_avatar.url
     data["avatar_url_after"] = after.display_avatar.url
 
+  if before.premium_since != after.premium_since:
+    data["new_premium_state"] = after.premium_since is not None
+
   if data.keys():
-    create_user_if_not_exist(after)
-    item = AuditLog(user_id=str(after.id), log_type=AuditLogItemType.MEMBER_UPDATED, data=data)
+    get_or_create_member_if_not_exist(after)
+    item = AuditLog(user_id=str(after.id), guild_id=str(after.guild.id), log_type=AuditLogItemType.MEMBER_UPDATED, data=data)
     session.add(item)
     if commit:
       session.commit()
     return item
   return None
 
-def delete_old_logs(days: int):
+def delete_old_logs(days: int, commit: bool=True):
   threshold = datetime.datetime.utcnow() - datetime.timedelta(days=days)
   session.query(AuditLog).filter(AuditLog.timestamp <= threshold).delete()
-  session.commit()
+  if commit:
+    session.commit()
