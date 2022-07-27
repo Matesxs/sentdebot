@@ -137,7 +137,7 @@ class AdminTools(Base_Cog):
   async def essentials(self, inter: disnake.CommandInteraction):
     pass
 
-  @essentials.sub_command(description="Search phrase in messages")
+  @essentials.sub_command(description=Strings.admin_tools_message_search_description)
   @cooldowns.long_cooldown
   @commands.guild_only()
   async def search_messages(self, inter: disnake.CommandInteraction,
@@ -188,7 +188,7 @@ class AdminTools(Base_Cog):
 
     await EmbedView(inter.author, pages, perma_lock=True, timeout=600).run(inter)
 
-  @essentials.sub_command(description="Pull guild data and save to database")
+  @essentials.sub_command(description=Strings.admin_tools_pull_data_description)
   @commands.max_concurrency(1, per=commands.BucketType.default)
   @cooldowns.huge_cooldown
   @commands.guild_only()
@@ -214,7 +214,7 @@ class AdminTools(Base_Cog):
           await asyncio.sleep(60)
 
     logger.info("Starting members pulling")
-    await inter.send(content="**Pulling members...**", ephemeral=True)
+    await inter.send(content=Strings.admin_tools_pull_data_pulling_members, ephemeral=True)
 
     members = inter.guild.fetch_members(limit=None)
     async for member in members:
@@ -222,11 +222,9 @@ class AdminTools(Base_Cog):
       await asyncio.sleep(0.2)
 
     logger.info("Starting channels pulling")
-    try:
-      message = await inter.original_message()
-      await message.edit(content="**Pulling channels...**")
-    except disnake.HTTPException:
-      pass
+    message = await inter.original_message()
+    if not inter.is_expired():
+      await message.edit(content=Strings.admin_tools_pull_data_pulling_channels)
 
     channels = await inter.guild.fetch_channels()
     for channel in channels:
@@ -237,11 +235,9 @@ class AdminTools(Base_Cog):
     channels_repo.session.commit()
 
     logger.info("Starting messages pulling")
-    try:
-      message = await inter.original_message()
-      await message.edit(content="**Pulling message history...**")
-    except disnake.HTTPException:
-      pass
+
+    if not inter.is_expired():
+      await message.edit(content=Strings.admin_tools_pull_data_pulling_messages)
 
     for channel in channels:
       if isinstance(channel, disnake.abc.Messageable):
@@ -258,23 +254,21 @@ class AdminTools(Base_Cog):
           messages_repo.session.commit()
 
     logger.info("Data pulling completed")
-    try:
-      message = await inter.original_message()
-      await message.edit(content="**Data pulling completed**")
-    except disnake.HTTPException:
-      pass
 
-  @essentials.sub_command(description="Clear old bots messages")
+    if not inter.is_expired():
+      await message.edit(content=Strings.admin_tools_pull_data_pulling_complete)
+
+  @essentials.sub_command(description=Strings.admin_tools_purge_bot_messages_description)
   @cooldowns.default_cooldown
   @commands.guild_only()
-  async def purge(self, inter: disnake.CommandInteraction):
+  async def purge_bot_messages(self, inter: disnake.CommandInteraction):
     if isinstance(inter.channel, (disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.StageChannel)):
       try:
         await inter.channel.purge(limit=100, check=lambda x: x.author == self.bot.user, bulk=False)
       except disnake.NotFound:
         pass
       return
-    await general_util.generate_error_message(inter, "Invalid channel")
+    await general_util.generate_error_message(inter, Strings.admin_tools_purge_bot_messages_invalid_channel)
 
 def setup(bot):
   bot.add_cog(AdminTools(bot))

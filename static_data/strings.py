@@ -167,3 +167,14 @@ class Strings(metaclass=formattable):
   admin_tools_purge_help = "Hours back specifies how old messages will get deleted"
 
   admin_tools_invalid_hours_back = "Invalid value of hours back"
+
+  admin_tools_message_search_description = "Search phrase in messages"
+
+  admin_tools_pull_data_description = "Pull guild data and save to database"
+  admin_tools_pull_data_pulling_members = "**Pulling members...**"
+  admin_tools_pull_data_pulling_channels = "**Pulling channels...**"
+  admin_tools_pull_data_pulling_messages = "**Pulling message history...**"
+  admin_tools_pull_data_pulling_complete = "**Data pulling completed**"
+
+  admin_tools_purge_bot_messages_description = "Clear old bots messages"
+  admin_tools_purge_bot_messages_invalid_channel = "Invalid channel"

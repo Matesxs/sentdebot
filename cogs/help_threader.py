@@ -202,7 +202,7 @@ class HelpThreader(Base_Cog):
         embed.add_field(name=f"{thread.name}", value=f"Owner: {owner.display_name}\nTags: {tags}\nLast activity: {humanize.naturaltime(last_activity)}\n[Link]({thread.jump_url})", inline=False)
       pages.append(embed)
 
-    await EmbedView(inter.author, pages).run(inter)
+    await EmbedView(inter.author, pages, perma_lock=True).run(inter)
 
   @help_requests.sub_command(name="solved", description=Strings.help_threader_request_solved_brief)
   async def help_requests_solved(self, inter: disnake.CommandInteraction):
