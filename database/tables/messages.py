@@ -15,7 +15,7 @@ class MessageAttachment(database.base):
   message_id = Column(String, ForeignKey("messages.id", ondelete="CASCADE"), index=True, nullable=False)
   url = Column(String, index=True, nullable=False)
 
-  message = relationship("Message", back_populates="attachments")
+  message = relationship("Message", back_populates="attachments", uselist=False)
 
 class Message(database.base):
   __tablename__ = "messages"
@@ -27,11 +27,12 @@ class Message(database.base):
   created_at = Column(DateTime, index=True, nullable=False)
   edited_at = Column(DateTime)
 
-  channel_id = Column(String, index=True, nullable=False)
-  thread_id = Column(String)
+  channel_id = Column(String, ForeignKey("text_channels.id", ondelete="CASCADE"), index=True, nullable=False)
+  thread_id = Column(String, ForeignKey("text_threads.id", ondelete="CASCADE"), index=True, nullable=True)
   content = Column(String)
 
   attachments = relationship("MessageAttachment", back_populates="message", uselist=True)
+  channel = relationship("TextChannel", back_populates="messages", uselist=False)
 
   use_for_metrics = Column(Boolean, nullable=False, default=False)
 
@@ -52,7 +53,7 @@ class Message(database.base):
   async def to_object(self, bot: commands.Bot) -> Optional[disnake.Message]:
     message = await general_util.get_or_fetch_message(bot, None, int(self.message_id))
     if message is None:
-      channel = await general_util.get_or_fetch_channel(bot, int(self.channel_id) if self.thread_id is None else int(self.thread_id))
+      channel = await self.channel.to_object(bot)
       if channel is None: return None
 
       message = await general_util.get_or_fetch_message(bot, channel, int(self.message_id))

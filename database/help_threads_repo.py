@@ -6,7 +6,7 @@ import disnake
 from config import config
 from database import session
 from database.tables.help_threads import HelpThread
-from database import users_repo
+from database import users_repo, channels_repo
 
 thread_cache = cachetools.LRUCache(config.db.max_number_of_cached_help_requests)
 
@@ -32,14 +32,15 @@ def update_thread_activity(thread_id: int, new_activity: datetime.datetime, comm
   if commit:
     session.commit()
 
-def create_thread(thread_id: int, owner: disnake.Member, tags: Optional[str]=None) -> HelpThread:
+def create_thread(thread: disnake.Thread, owner: disnake.Member, tags: Optional[str]=None) -> HelpThread:
   users_repo.get_or_create_member_if_not_exist(owner)
 
-  item = HelpThread(thread_id=str(thread_id), owner_id=str(owner.id), tags=tags)
+  channels_repo.get_or_create_text_thread(thread)
+  item = HelpThread(thread_id=str(thread.id), owner_id=str(owner.id), tags=tags)
   session.add(item)
   session.commit()
 
-  thread_cache[thread_id] = item
+  thread_cache[thread.id] = item
   return item
 
 def get_all() -> List[HelpThread]:

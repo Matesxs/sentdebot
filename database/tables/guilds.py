@@ -11,8 +11,9 @@ class Guild(database.base):
 
   id = Column(String, primary_key=True, unique=True, index=True)
 
-  members = relationship("Member", back_populates="guild")
-  audit_logs = relationship("AuditLog")
+  text_channels = relationship("TextChannel", back_populates="guild", uselist=True)
+  members = relationship("Member", back_populates="guild", uselist=True)
+  audit_logs = relationship("AuditLog", uselist=True)
 
   @classmethod
   def from_guild(cls, guild: disnake.Guild):

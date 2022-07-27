@@ -2,12 +2,16 @@ import asyncio
 import datetime
 import disnake
 from disnake.ext import commands
-from typing import Union
+from typing import Union, List
 
+from config import cooldowns, config
 from features.base_cog import Base_Cog
 from util import general_util
-from database import messages_repo, users_repo
+from database import messages_repo, users_repo, channels_repo
 from static_data.strings import Strings
+from util.logger import setup_custom_logger
+
+logger = setup_custom_logger(__name__)
 
 class AdminTools(Base_Cog):
   def __init__(self, bot: commands.Bot):
@@ -126,16 +130,84 @@ class AdminTools(Base_Cog):
     deleted_messages = await ctx.channel.purge(after=threshold)
     await general_util.generate_success_message(ctx, f"Deleted {len(deleted_messages)} message(s)")
 
-  @commands.slash_command(description="Get all members of server and save them to database")
+  @commands.slash_command(description="Pull guild data and save to database")
+  @commands.max_concurrency(1, per=commands.BucketType.default)
   @commands.check(general_util.is_administrator)
+  @cooldowns.huge_cooldown
   @commands.guild_only()
-  async def pull_members(self, inter: disnake.CommandInteraction):
-    await inter.send("**Pulling members...**", ephemeral=True)
+  async def pull_data(self, inter: disnake.CommandInteraction):
+    async def save_messages(message_it: disnake.abc.HistoryIterator):
+      try:
+        async for message in message_it:
+          if message.author.bot or message.author.system: continue
+          messages_repo.add_if_not_existing(message, commit=False)
+          await asyncio.sleep(0.2)
+      except disnake.Forbidden:
+        return
+      except disnake.HTTPException:
+        logger.warning("Limit reached, waiting")
+        await asyncio.sleep(60)
+
+    logger.info("Starting members pulling")
+    await inter.send(content="**Pulling members...**", ephemeral=True)
+
     members = inter.guild.fetch_members(limit=None)
     async for member in members:
       users_repo.get_or_create_member_if_not_exist(member)
-      await asyncio.sleep(0.05)
-    await inter.followup.send("**Pulling done**", ephemeral=True)
+      await asyncio.sleep(0.2)
+
+    logger.info("Starting channels pulling")
+    try:
+      message = await inter.original_message()
+      await message.edit(content="**Pulling channels...**")
+    except disnake.HTTPException:
+      pass
+
+    channels = await inter.guild.fetch_channels()
+    for channel in channels:
+      if isinstance(channel, disnake.abc.Messageable):
+        channels_repo.get_or_create_text_channel_if_not_exist(channel)
+        await asyncio.sleep(0.2)
+
+    channels_repo.session.commit()
+
+    logger.info("Starting messages pulling")
+    try:
+      message = await inter.original_message()
+      await message.edit(content="**Pulling message history...**")
+    except disnake.HTTPException:
+      pass
+
+    for channel in channels:
+      if isinstance(channel, disnake.abc.Messageable):
+        messages_it = channel.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days))
+        await save_messages(messages_it)
+        messages_repo.session.commit()
+
+        if hasattr(channel, "threads"):
+          threads: List[disnake.Thread] = channel.threads
+          for thread in threads:
+            messages_it = thread.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days))
+            await save_messages(messages_it)
+
+          messages_repo.session.commit()
+
+    logger.info("Data pulling completed")
+    try:
+      message = await inter.original_message()
+      await message.edit(content="**Data pulling completed**")
+    except disnake.HTTPException:
+      pass
+
+  @commands.slash_command(description="Clear old bots messages")
+  @commands.check(general_util.is_administrator)
+  @cooldowns.default_cooldown
+  @commands.guild_only()
+  async def purge(self, inter: disnake.CommandInteraction):
+    if isinstance(inter.channel, (disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.StageChannel)):
+      await inter.channel.purge(limit=100, check=lambda x: x.author == self.bot.user, bulk=False)
+      return await general_util.generate_success_message(inter, "Messages purged")
+    await general_util.generate_error_message(inter, "Invalid channel")
 
 def setup(bot):
   bot.add_cog(AdminTools(bot))

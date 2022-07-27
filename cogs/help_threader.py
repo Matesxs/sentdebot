@@ -12,7 +12,7 @@ from features.base_cog import Base_Cog
 from config import config, cooldowns
 from static_data.strings import Strings
 from features.paginator import EmbedView
-from database import help_threads_repo, users_repo
+from database import help_threads_repo
 from util.logger import setup_custom_logger
 from util import general_util
 from modals.create_help_request import HelpRequestModal
@@ -50,27 +50,18 @@ class HelpThreader(Base_Cog):
       return
 
     for help_req_item in unactive_help_requests:
-      message_id = int(help_req_item.thread_id)
-
-      try:
-        message = await help_channel.fetch_message(message_id)
-      except:
-        # Message that thread was connected to don't exist
-        logger.info(f"[Auto close task] Message {message_id} don't exist")
-        continue
-
-      thread = message.thread
+      thread: Optional[disnake.Thread] = help_req_item.thread.to_object(self.bot)
       if thread is None:
         # Thread don't exist
-        logger.info(f"[Auto close task] Thread for message {message_id} don't exist")
+        logger.info(f"[Auto close task] Thread {help_req_item.thread_id} don't exist")
         continue
 
       if thread.locked:
         # Thread is already closed
-        logger.info(f"[Auto close task] Thread for message {message_id} is already closed")
+        logger.info(f"[Auto close task] Thread {thread.id} is already closed")
         continue
 
-      owner = message.guild.get_member(int(help_req_item.owner_id)) if help_req_item.owner_id is not None else None
+      owner = await general_util.get_or_fetch_member(thread.guild, int(help_req_item.owner_id)) if help_req_item.owner_id is not None else None
       if owner is None:
         # Owner of that thread is not on server anymore
         logger.info(f"[Auto close task] Owner of thread {thread.id} is not on server anymore, locking it up")
@@ -133,7 +124,7 @@ class HelpThreader(Base_Cog):
       thread = await help_channel.create_thread(name=title, message=message, auto_archive_duration=1440, reason=f"Help request from {interaction.author}")
       await thread.add_user(interaction.author)
 
-      help_threads_repo.create_thread(thread.id, interaction.author, tags)
+      help_threads_repo.create_thread(thread, interaction.author, tags)
 
       await thread.send(Strings.help_threader_announcement)
     except disnake.HTTPException:
@@ -147,7 +138,12 @@ class HelpThreader(Base_Cog):
 
   @help_requests.sub_command(name="create", description=Strings.help_threader_request_create_brief)
   @cooldowns.huge_cooldown
+  @commands.guild_only()
   async def help_requests_create(self, inter: disnake.CommandInteraction):
+    main_guild = self.bot.get_guild(config.ids.main_guild)
+    if disnake.utils.get(main_guild.members, id=inter.author.id) is None:
+      return await general_util.generate_error_message(inter, "You are not member of main guild")
+
     await inter.response.send_modal(HelpRequestModal(self.create_new_help_thread))
 
   @help_requests.sub_command(name="list", description=Strings.help_threader_list_requests_brief)
@@ -161,42 +157,31 @@ class HelpThreader(Base_Cog):
       return await general_util.generate_error_message(inter, Strings.help_threader_help_channel_not_found)
 
     for record in all_records:
-      message_id = int(record.thread_id)
-
-      try:
-        message = await help_channel.fetch_message(message_id)
-      except:
-        # Message that thread was connected to don't exist
-        logger.info(f"Message {message_id} don't exist")
-        help_threads_repo.delete_thread(message_id)
+      help_thread: Optional[disnake.Thread] = await record.thread.to_object(self.bot)
+      if help_thread is None:
+        logger.info(f"Thread {record.thread_id} don't exist")
+        help_threads_repo.delete_thread(int(record.thread_id))
         continue
 
-      thread = message.thread
-      if thread is None:
-        # Thread don't exist
-        logger.info(f"Thread for message {message_id} don't exist")
-        help_threads_repo.delete_thread(message_id)
-        continue
-
-      if thread.locked:
+      if help_thread.locked:
         # Thread is closed
-        logger.info(f"Thread for message {message_id} is closed")
-        help_threads_repo.delete_thread(message_id)
+        logger.info(f"Thread {help_thread.id} is closed")
+        help_threads_repo.delete_thread(help_thread.id)
         continue
 
-      owner = message.guild.get_member(int(record.owner_id)) if record.owner_id is not None else None
+      owner = await general_util.get_or_fetch_member(help_thread.guild, int(record.owner_id)) if record.owner_id is not None else None
       if owner is None:
         # Owner of that thread is not on server anymore
-        logger.info(f"Owner of thread {thread.id} is not on server anymore")
-        help_threads_repo.delete_thread(message_id)
+        logger.info(f"Owner of thread {help_thread.id} is not on server anymore")
+        help_threads_repo.delete_thread(help_thread.id)
         continue
 
-      if thread.archived:
+      if help_thread.archived:
         # Thread not active for extensive period of time but maybe still unsolved
-        logger.info(f"Thread for message {message_id} is archived but not closed, skipping")
+        logger.info(f"Thread {help_thread.id} is archived but not closed, skipping")
         continue
 
-      unanswered_threads.append((thread, record.tags, message, owner, record.last_activity_time))
+      unanswered_threads.append((help_thread, record.tags, owner, record.last_activity_time))
 
     if not unanswered_threads:
       embed = disnake.Embed(title="Help needed", description=Strings.help_threader_list_requests_no_help_required, color=disnake.Color.dark_green())
@@ -211,7 +196,7 @@ class HelpThreader(Base_Cog):
     for batch in batches:
       embed = disnake.Embed(title="Help needed", color=disnake.Color.dark_green())
       general_util.add_author_footer(embed, inter.author)
-      for thread, tags, message, owner, last_activity in batch:
+      for thread, tags, owner, last_activity in batch:
         tags = "".join([f"[{tag.strip()}]" for tag in tags.split(";") if tag != ""]) if tags is not None else None
 
         embed.add_field(name=f"{thread.name}", value=f"Owner: {owner.display_name}\nTags: {tags}\nLast activity: {humanize.naturaltime(last_activity)}\n[Link]({thread.jump_url})", inline=False)

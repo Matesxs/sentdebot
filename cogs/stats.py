@@ -90,7 +90,7 @@ class Stats(Base_Cog):
     for pair in user_id_counts_overall[::-1]:
       member = await general_util.get_or_fetch_member(ctx.guild, pair[0])
       if member is not None:
-        users.append(general_util.truncate_string(member.name, limit=config.stats.name_length_limit))
+        users.append(general_util.truncate_string(member.display_name, limit=config.stats.name_length_limit))
         msgs.append(pair[1])
 
     y_pos = np.arange(len(users))
@@ -107,7 +107,7 @@ class Stats(Base_Cog):
     for pair in uids_in_help[::-1]:
       member = await general_util.get_or_fetch_member(ctx.guild, pair[0])
       if member is not None:
-        users.append(general_util.truncate_string(member.name, limit=config.stats.name_length_limit))
+        users.append(general_util.truncate_string(member.display_name, limit=config.stats.name_length_limit))
         msgs.append(pair[1])
 
     y_pos = np.arange(len(users))

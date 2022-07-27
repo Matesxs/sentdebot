@@ -16,7 +16,7 @@ class User(database.base):
   is_bot = Column(Boolean, nullable=False)
   is_system = Column(Boolean, nullable=False)
 
-  members = relationship("Member", back_populates="user")
+  members = relationship("Member", back_populates="user", uselist=True)
   help_requests = relationship("HelpThread")
 
   @classmethod
@@ -43,14 +43,14 @@ class Member(database.base):
   icon_url = Column(String)
   premium = Column(Boolean, nullable=False)
 
-  user = relationship("User", back_populates="members")
-  guild = relationship("Guild", back_populates="members")
+  user = relationship("User", back_populates="members", uselist=False)
+  guild = relationship("Guild", back_populates="members", uselist=False)
 
   joined_at = Column(DateTime, nullable=False, index=True)
   left_at = Column(DateTime, index=True)
 
-  audit_logs = relationship("AuditLog", primaryjoin="and_(foreign(Member.id) == AuditLog.user_id, foreign(Member.guild_id) == AuditLog.guild_id)", viewonly=True)
-  messages = relationship("Message", primaryjoin="and_(foreign(Member.id) == Message.author_id, foreign(Member.guild_id) == Message.guild_id)", viewonly=True)
+  audit_logs = relationship("AuditLog", primaryjoin="and_(foreign(Member.id) == AuditLog.user_id, foreign(Member.guild_id) == AuditLog.guild_id)", viewonly=True, uselist=True)
+  messages = relationship("Message", primaryjoin="and_(foreign(Member.id) == Message.author_id, foreign(Member.guild_id) == Message.guild_id)", viewonly=True, uselist=True)
 
   @classmethod
   def from_member(cls, member: disnake.Member):

@@ -5,7 +5,7 @@ from typing import Optional
 
 from util.logger import setup_custom_logger
 from config import config
-from database import messages_repo, audit_log_repo, users_repo, help_threads_repo, user_metrics_repo, guilds_repo
+from database import messages_repo, audit_log_repo, users_repo, help_threads_repo, user_metrics_repo, guilds_repo, channels_repo
 from features.base_cog import Base_Cog
 
 logger = setup_custom_logger(__name__)
@@ -48,24 +48,47 @@ class Auditlog(Base_Cog):
     user_metrics_repo.session.commit()
 
   @commands.Cog.listener()
+  async def on_raw_thread_update(self, after: disnake.Thread):
+    thread_it = channels_repo.get_thread(after.id)
+    if thread_it is not None:
+      thread_it.archived = after.archived
+      thread_it.locked = after.locked
+      channels_repo.session.commit()
+
+  @commands.Cog.listener()
+  async def on_thread_create(self, thread: disnake.Thread):
+    channels_repo.get_or_create_text_thread(thread)
+
+  @commands.Cog.listener()
+  async def on_raw_thread_delete(self, payload: disnake.RawThreadDeleteEvent):
+    channels_repo.remove_thread(payload.thread_id)
+
+  @commands.Cog.listener()
+  async def on_guild_channel_create(self, channel: disnake.abc.GuildChannel):
+    if isinstance(channel, disnake.abc.MessageableChannel):
+      channels_repo.get_or_create_text_channel_if_not_exist(channel)
+
+  @commands.Cog.listener()
+  async def on_guild_channel_delete(self, channel: disnake.abc.GuildChannel):
+    if isinstance(channel, disnake.abc.MessageableChannel):
+      channels_repo.remove_channel(channel.id)
+
+  @commands.Cog.listener()
   async def on_message(self, message: disnake.Message):
     if message.guild is None: return
     if message.author.bot: return
     if message.content.startswith(config.base.command_prefix): return
 
     thread = None
-    channel = message.channel
-    if isinstance(channel, disnake.Thread):
-      thread = channel
-      channel = channel.parent
+    if isinstance(message.channel, disnake.Thread):
+      thread = message.channel
 
     thread_id = thread.id if thread is not None else None
     if thread is not None:
       if help_threads_repo.thread_exists(thread_id):
         help_threads_repo.update_thread_activity(thread_id, datetime.datetime.utcnow(), commit=False)
 
-    use_for_metrics = messages_repo.get_author_of_last_message_metric(channel.id, thread_id) != message.author.id
-    messages_repo.add_message(message, use_for_metrics, commit=True)
+    messages_repo.add_message(message, commit=True)
 
   async def handle_message_edited(self, before: Optional[disnake.Message], after: disnake.Message):
     if after.guild is None: return
