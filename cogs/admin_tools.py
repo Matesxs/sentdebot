@@ -137,16 +137,24 @@ class AdminTools(Base_Cog):
   @commands.guild_only()
   async def pull_data(self, inter: disnake.CommandInteraction):
     async def save_messages(message_it: disnake.abc.HistoryIterator):
-      try:
-        async for message in message_it:
-          if message.author.bot or message.author.system: continue
-          messages_repo.add_if_not_existing(message, commit=False)
-          await asyncio.sleep(0.2)
-      except disnake.Forbidden:
-        return
-      except disnake.HTTPException:
-        logger.warning("Limit reached, waiting")
-        await asyncio.sleep(60)
+      retries = 0
+      while True:
+        try:
+          async for message in message_it:
+            if message.author.bot or message.author.system: continue
+            messages_repo.add_if_not_existing(message, commit=False)
+            await asyncio.sleep(0.2)
+          break
+        except disnake.Forbidden:
+          return
+        except disnake.HTTPException:
+          retries += 1
+          if retries >= 10:
+            logger.warning("Limit reached 10x, skipping")
+            break
+
+          logger.warning("Limit reached, waiting")
+          await asyncio.sleep(60)
 
     logger.info("Starting members pulling")
     await inter.send(content="**Pulling members...**", ephemeral=True)
