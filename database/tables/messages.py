@@ -51,11 +51,11 @@ class Message(database.base):
                content=message.content)
 
   async def to_object(self, bot: commands.Bot) -> Optional[disnake.Message]:
-    message = await general_util.get_or_fetch_message(bot, None, int(self.message_id))
+    message = await general_util.get_or_fetch_message(bot, None, int(self.id))
     if message is None:
       channel = await self.channel.to_object(bot)
       if channel is None: return None
 
-      message = await general_util.get_or_fetch_message(bot, channel, int(self.message_id))
+      message = await general_util.get_or_fetch_message(bot, channel, int(self.id))
 
     return message

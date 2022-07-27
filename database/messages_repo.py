@@ -1,6 +1,7 @@
 import disnake
 import datetime
 from typing import List, Tuple, Optional
+import sqlalchemy.orm
 
 from database import session
 from database.tables.messages import Message, MessageAttachment
@@ -67,6 +68,13 @@ def add_if_not_existing(message: disnake.Message, commit: bool=True) -> Optional
   if message_it is None:
     return add_message(message, commit)
   return None
+
+def get_messages_iterator(guild_id: int, author_id: Optional[int]) -> sqlalchemy.orm.Query:
+  if author_id is not None:
+    query = session.query(Message).filter(Message.id == str(author_id), Message.guild_id == str(guild_id)).order_by(Message.created_at.desc())
+  else:
+    query = session.query(Message).filter(Message.guild_id == str(guild_id)).order_by(Message.created_at.desc())
+  return query
 
 def get_message_metrics(guild_id: int, days_back: int) -> List[Tuple[int, datetime.datetime, int, int]]:
   threshold_date = datetime.datetime.utcnow() - datetime.timedelta(days=days_back)
