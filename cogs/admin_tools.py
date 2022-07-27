@@ -4,6 +4,7 @@ import disnake
 from disnake.ext import commands
 from typing import Union, List, Optional
 from Levenshtein import ratio
+import humanize
 
 from config import cooldowns, config
 from features.base_cog import Base_Cog
@@ -145,9 +146,9 @@ class AdminTools(Base_Cog):
                             match_with_levenshtein: bool=commands.Param(default=False, description="Use Levenshtein distance for searching"),
                             member: Optional[disnake.Member]=commands.Param(default=None, description="Filter only specific member"),
                             limit: int=commands.Param(default=100, description="Limit number of messages to retrieve")):
-    await inter.response.defer(with_message=True)
+    await inter.response.defer(with_message=True, ephemeral=True)
 
-    message_iterator:List[messages_repo.Message] = messages_repo.get_messages_iterator(inter.guild_id, member)
+    message_iterator = messages_repo.get_messages_iterator(inter.guild_id, member)
 
     messages = []
     number_of_messages = 0
@@ -163,6 +164,8 @@ class AdminTools(Base_Cog):
     if number_of_messages == 0:
       return await general_util.generate_error_message(inter, "No match found")
 
+    messages.reverse()
+
     pages = []
     title = f"Message search for term `{search_term}`"
     emb = disnake.Embed(title=title, colour=disnake.Color.dark_blue())
@@ -173,16 +176,17 @@ class AdminTools(Base_Cog):
       if message is None: continue
 
       field_title = f"Author: {general_util.truncate_string(message.author.display_name, 20)}"
-      text = general_util.truncate_string(message.content, 800) + f"\n[Link]({message.jump_url})"
+      message_text = f"**Created: {humanize.naturaltime(message.created_at.replace(tzinfo=None))}**\n{message.content}"
+      message_text = general_util.truncate_string(message_text, 800) + f"\n[Link]({message.jump_url})"
       embed_len = len(emb)
-      added_length = len(field_title) + len(text)
+      added_length = len(field_title) + len(message_text)
 
       if embed_len + added_length > 5000:
         pages.append(emb)
         emb = disnake.Embed(title=title, colour=disnake.Color.dark_blue())
         general_util.add_author_footer(emb, inter.author)
 
-      emb.add_field(name=field_title, value=text, inline=False)
+      emb.add_field(name=field_title, value=message_text, inline=False)
 
     pages.append(emb)
 

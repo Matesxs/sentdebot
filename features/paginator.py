@@ -95,7 +95,7 @@ class EmbedView(disnake.ui.View):
     return page
 
   async def run(self, ctx):
-    if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction)):
+    if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction, disnake.CommandInteraction)):
       await ctx.send(embed=self.embed(), view=self, ephemeral=True)
       self.message = ctx
     else:
