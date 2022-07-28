@@ -203,7 +203,7 @@ class AdminTools(Base_Cog):
         try:
           async for message in message_it:
             if message.author.bot or message.author.system: continue
-            messages_repo.add_if_not_existing(message, commit=False)
+            messages_repo.add_or_set_message(message, commit=False)
             await asyncio.sleep(0.2)
           break
         except disnake.Forbidden:
@@ -217,8 +217,8 @@ class AdminTools(Base_Cog):
           logger.warning("Limit reached, waiting")
           await asyncio.sleep(60)
 
+    await inter.response.defer(with_message=True, ephemeral=True)
     logger.info("Starting members pulling")
-    await inter.send(content=Strings.admin_tools_pull_data_pulling_members, ephemeral=True)
 
     members = inter.guild.fetch_members(limit=None)
     async for member in members:
@@ -226,13 +226,10 @@ class AdminTools(Base_Cog):
       await asyncio.sleep(0.2)
 
     logger.info("Starting channels pulling")
-    message = await inter.original_message()
-    if not inter.is_expired():
-      await message.edit(content=Strings.admin_tools_pull_data_pulling_channels)
 
     channels = await inter.guild.fetch_channels()
     for channel in channels:
-      if isinstance(channel, disnake.abc.Messageable):
+      if isinstance(channel, (disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel)):
         channels_repo.get_or_create_text_channel_if_not_exist(channel)
         await asyncio.sleep(0.2)
 
@@ -240,11 +237,8 @@ class AdminTools(Base_Cog):
 
     logger.info("Starting messages pulling")
 
-    if not inter.is_expired():
-      await message.edit(content=Strings.admin_tools_pull_data_pulling_messages)
-
     for channel in channels:
-      if isinstance(channel, disnake.abc.Messageable):
+      if isinstance(channel, (disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel)):
         messages_it = channel.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days))
         await save_messages(messages_it)
         messages_repo.session.commit()
@@ -260,7 +254,7 @@ class AdminTools(Base_Cog):
     logger.info("Data pulling completed")
 
     if not inter.is_expired():
-      await message.edit(content=Strings.admin_tools_pull_data_pulling_complete)
+      await inter.send(content=Strings.admin_tools_pull_data_pulling_complete)
 
   @essentials.sub_command(description=Strings.admin_tools_purge_bot_messages_description)
   @cooldowns.default_cooldown
@@ -273,6 +267,15 @@ class AdminTools(Base_Cog):
         pass
       return
     await general_util.generate_error_message(inter, Strings.admin_tools_purge_bot_messages_invalid_channel)
+
+  @commands.message_command(name="Remove bots message")
+  @commands.check(general_util.is_administrator)
+  @cooldowns.default_cooldown
+  async def remove_bots_message(self, inter: disnake.MessageCommandInteraction, message: disnake.Message):
+    if message.author.id != self.bot.user.id:
+      return await general_util.generate_error_message(inter, "Invalid message author")
+    await message.delete()
+    await general_util.generate_success_message(inter, "Message removed")
 
 def setup(bot):
   bot.add_cog(AdminTools(bot))

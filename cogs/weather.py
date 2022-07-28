@@ -32,6 +32,18 @@ def _get_current_day_phase() -> str:
   return "Night"
 
 
+def _celsius_to_fahrenheit(value):
+  if isinstance(value, str):
+    value = float(value)
+  return round(value * (9 / 5) + 32)
+
+
+def _kmph_to_mph(value):
+  if isinstance(value, str):
+    value = float(value)
+  return round(value * 0.621371192)
+
+
 def _get_useful_data(all_data: dict) -> List[dict]:
   weather = []
   nearest_place = all_data["nearest_area"][0]["areaName"][0]["value"]
@@ -91,12 +103,12 @@ async def _create_embeds(inter: disnake.CommandInteraction, place: str) -> Optio
     if i == 0:
       # Show current weather in title
       now = day[current_day_phase]
-      title = f"{title}: {now['state']}, {now['temp']} ˚C"
+      title = f"{title}: {now['state']}, {now['temp']} ˚C ({_celsius_to_fahrenheit(now['temp'])} ˚F)"
     else:
       # Show maximum and minimum in title
       temperatures = [int(info["temp"]) for phase, info in day.items() if type(info) is dict]
       min_t, max_t = min(temperatures), max(temperatures)
-      title = f"{title}: {min_t}\N{EN DASH}{max_t} °C"
+      title = f"{title}: {min_t}\N{EN DASH}{max_t} °C ({_celsius_to_fahrenheit(min_t)}\N{EN DASH}{_celsius_to_fahrenheit(max_t)} °F)"
 
     embed = disnake.Embed(title=title, description=f"Weather forecast for **{place}**, {day['date']}", color=disnake.Color.dark_blue())
     general_util.add_author_footer(embed, inter.author)
@@ -114,8 +126,8 @@ async def _create_embeds(inter: disnake.CommandInteraction, place: str) -> Optio
         continue
 
       embed.add_field(name=f"{day_phase}: {weather_info['state']}",
-                      value=f"Temperature: **{weather_info['temp']} ˚C** (feels like **{weather_info['feels_like']} ˚C**)\n"
-                            f"Wind speed: **{weather_info['wind_speed']} km/h**\n"
+                      value=f"Temperature: **{weather_info['temp']} ˚C ({_celsius_to_fahrenheit(weather_info['temp'])} ˚F)** (feels like **{weather_info['feels_like']} ˚C ({_celsius_to_fahrenheit(weather_info['feels_like'])} ˚F)**)\n"
+                            f"Wind speed: **{weather_info['wind_speed']} km/h ({_kmph_to_mph(weather_info['wind_speed'])} mph)**\n"
                             f"Chance of rain: **{weather_info['rain_chance']} %**", inline=False)
 
     embeds.append(embed)

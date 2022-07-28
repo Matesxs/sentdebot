@@ -11,9 +11,6 @@ def get_message(message_id: int) -> Optional[Message]:
   return session.query(Message).filter(Message.id == str(message_id)).one_or_none()
 
 def update_attachments(message: Message, new_attachments: List[disnake.Attachment], commit: bool=True):
-  if get_message(int(message.id)) is None:
-    return
-
   current_attachments: List[MessageAttachment] = message.attachments
   current_urls = [att.url for att in current_attachments]
   new_urls = [att.url for att in new_attachments]
@@ -34,7 +31,7 @@ def get_author_of_last_message_metric(channel_id: int, thread_id: Optional[int])
   user_id = session.query(Message.author_id).filter(Message.channel_id == str(channel_id), Message.thread_id == (str(thread_id) if thread_id is not None else None), Message.use_for_metrics == True).order_by(Message.created_at.desc()).first()
   return int(user_id[0]) if user_id is not None else None
 
-def add_message(message: disnake.Message, commit: bool=True) -> Message:
+def add_or_set_message(message: disnake.Message, commit: bool=True) -> Message:
   if message.guild is not None and isinstance(message.author, disnake.Member):
     users_repo.get_or_create_member_if_not_exist(message.author)
   else:
@@ -49,25 +46,22 @@ def add_message(message: disnake.Message, commit: bool=True) -> Message:
   if message.channel is not None:
     channels_repo.get_or_create_text_channel_if_not_exist(message.channel)
 
-  use_for_metrics = get_author_of_last_message_metric(channel.id, thread.id if thread is not None else None) != message.author.id
+  message_it = get_message(message.id)
+  if message_it is None:
+    use_for_metrics = get_author_of_last_message_metric(channel.id, thread.id if thread is not None else None) != message.author.id
 
-  item = Message.from_message(message)
-  item.use_for_metrics = use_for_metrics
-  session.add(item)
+    message_it = Message.from_message(message)
+    message_it.use_for_metrics = use_for_metrics
+    session.add(message_it)
+  else:
+    message_it.content = message.content
+    message_it.edited_at = message.edited_at
 
-  for att in message.attachments:
-    att_it = MessageAttachment(id=str(att.id), message_id=str(message.id), url=att.url)
-    session.add(att_it)
+  update_attachments(message_it, message.attachments, commit=False)
 
   if commit:
     session.commit()
-  return item
-
-def add_if_not_existing(message: disnake.Message, commit: bool=True) -> Optional[Message]:
-  message_it = get_message(message.id)
-  if message_it is None:
-    return add_message(message, commit)
-  return None
+  return message_it
 
 def get_messages_iterator(guild_id: int, author_id: Optional[int]) -> sqlalchemy.orm.Query:
   if author_id is not None:

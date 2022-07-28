@@ -1,7 +1,7 @@
 import datetime
 import disnake
 from disnake.ext import commands, tasks
-from typing import Optional
+from typing import Optional, Union
 
 from util.logger import setup_custom_logger
 from config import config
@@ -65,12 +65,12 @@ class Auditlog(Base_Cog):
 
   @commands.Cog.listener()
   async def on_guild_channel_create(self, channel: disnake.abc.GuildChannel):
-    if isinstance(channel, disnake.abc.MessageableChannel):
+    if isinstance(channel, (disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel)):
       channels_repo.get_or_create_text_channel_if_not_exist(channel)
 
   @commands.Cog.listener()
   async def on_guild_channel_delete(self, channel: disnake.abc.GuildChannel):
-    if isinstance(channel, disnake.abc.MessageableChannel):
+    if isinstance(channel, (disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel)):
       channels_repo.remove_channel(channel.id)
 
   @commands.Cog.listener()
@@ -88,7 +88,7 @@ class Auditlog(Base_Cog):
       if help_threads_repo.thread_exists(thread_id):
         help_threads_repo.update_thread_activity(thread_id, datetime.datetime.utcnow(), commit=False)
 
-    messages_repo.add_message(message, commit=True)
+    messages_repo.add_or_set_message(message, commit=True)
 
   async def handle_message_edited(self, before: Optional[disnake.Message], after: disnake.Message):
     if after.guild is None: return

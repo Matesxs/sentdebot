@@ -55,6 +55,7 @@ class Strings(metaclass=formattable):
   error_no_private_message = "This command can't be used in private channel"
   error_interaction_timeout = "Interaction took more than 3 seconds to be responded to. Try again later."
   error_forbiden = "Bot can't do this action"
+  error_blocked_dms = "You have blocked DMs"
 
   # Common
   common_ping_brief = "Ping the bot and get bot and api latency"
@@ -171,9 +172,6 @@ class Strings(metaclass=formattable):
   admin_tools_message_search_description = "Search phrase in messages"
 
   admin_tools_pull_data_description = "Pull guild data and save to database"
-  admin_tools_pull_data_pulling_members = "**Pulling members...**"
-  admin_tools_pull_data_pulling_channels = "**Pulling channels...**"
-  admin_tools_pull_data_pulling_messages = "**Pulling message history...**"
   admin_tools_pull_data_pulling_complete = "**Data pulling completed**"
 
   admin_tools_purge_bot_messages_description = "Clear old bots messages"
