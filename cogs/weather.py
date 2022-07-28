@@ -59,7 +59,7 @@ def _get_useful_data(all_data: dict) -> List[dict]:
   return weather
 
 
-async def _create_embeds(ctx: commands.Context, place: str) -> Optional[List[disnake.Embed]]:
+async def _create_embeds(inter: disnake.CommandInteraction, place: str) -> Optional[List[disnake.Embed]]:
   """create embeds for scrollable embed"""
   safe_name: str = urllib.parse.quote_plus(place)
   url = f"https://wttr.in/{safe_name}?format=j1&lang=en"
@@ -99,7 +99,7 @@ async def _create_embeds(ctx: commands.Context, place: str) -> Optional[List[dis
       title = f"{title}: {min_t}\N{EN DASH}{max_t} °C"
 
     embed = disnake.Embed(title=title, description=f"Weather forecast for **{place}**, {day['date']}", color=disnake.Color.dark_blue())
-    general_util.add_author_footer(embed, ctx.message.author)
+    general_util.add_author_footer(embed, inter.author)
 
     skip_day_phase: bool = True
     for day_phase, weather_info in day.items():
