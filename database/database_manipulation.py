@@ -9,6 +9,7 @@ from database.tables import messages
 from database.tables import projects
 from database.tables import help_threads
 from database.tables import questions_and_answers
+from database.tables import weather_settings
 
 from util.logger import setup_custom_logger
 

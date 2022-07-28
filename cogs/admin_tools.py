@@ -190,7 +190,7 @@ class AdminTools(Base_Cog):
 
     pages.append(emb)
 
-    await EmbedView(inter.author, pages, perma_lock=True, timeout=600).run(inter)
+    await EmbedView(inter.author, pages, perma_lock=True, timeout=600, invisible=True).run(inter)
 
   @essentials.sub_command(description=Strings.admin_tools_pull_data_description)
   @commands.max_concurrency(1, per=commands.BucketType.default)

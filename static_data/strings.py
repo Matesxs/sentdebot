@@ -178,3 +178,16 @@ class Strings(metaclass=formattable):
 
   admin_tools_purge_bot_messages_description = "Clear old bots messages"
   admin_tools_purge_bot_messages_invalid_channel = "Invalid channel"
+
+  # Weather
+  weather_set_place_brief = "Set default weather place"
+  weather_set_place_invalid_place = "Place is not valid"
+  weather_set_place_set = "Your prefered weather place set to **{place}**"
+
+  weather_unset_place_brief = "Remove default weather place"
+  weather_unset_place_not_place_to_remove = "You don't have set place to remove"
+  weather_unset_place_removed = "Your preferred weather place was removed"
+
+  weather_request_weather_breif = "Request weather report on specific place on the one set by set place command"
+  weather_request_weather_place_not_set = "You didn't specified place or dont have set one"
+  weather_request_weather_error = "Invalid place or server error"

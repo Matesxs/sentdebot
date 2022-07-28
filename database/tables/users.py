@@ -17,7 +17,8 @@ class User(database.base):
   is_system = Column(Boolean, nullable=False)
 
   members = relationship("Member", back_populates="user", uselist=True)
-  help_requests = relationship("HelpThread")
+  help_requests = relationship("HelpThread", uselist=True)
+  weather_settings = relationship("WeatherSettings", back_populates="user", uselist=False)
 
   @classmethod
   def from_user(cls, user: Union[disnake.Member, disnake.User]):

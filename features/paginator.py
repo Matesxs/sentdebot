@@ -37,7 +37,8 @@ class EmbedView(disnake.ui.View):
       perma_lock: bool = False,
       roll_arroud: bool = True,
       end_arrow: bool = True,
-      timeout: Optional[float] = 300
+      timeout: Optional[float] = 300,
+      invisible: bool=False
   ):
 
     self.message: Optional[Union[disnake.Message, disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction]] = None
@@ -48,6 +49,7 @@ class EmbedView(disnake.ui.View):
     self.perma_lock = perma_lock
     self.embeds = embeds
     self.max_page = len(embeds)
+    self.invisible = invisible
     super().__init__(timeout=timeout)
 
     if self.max_page > 1:
@@ -96,7 +98,7 @@ class EmbedView(disnake.ui.View):
 
   async def run(self, ctx):
     if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction, disnake.CommandInteraction)):
-      await ctx.send(embed=self.embed(), view=self, ephemeral=True)
+      await ctx.send(embed=self.embed(), view=self, ephemeral=self.invisible)
       self.message = ctx
     else:
       self.message = await ctx.send(embed=self.embed(), view=self)
