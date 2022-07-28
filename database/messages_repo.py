@@ -1,7 +1,6 @@
 import disnake
 import datetime
-from typing import List, Tuple, Optional
-import sqlalchemy.orm
+from typing import List, Tuple, Optional, Iterator
 
 from database import session
 from database.tables.messages import Message, MessageAttachment
@@ -63,12 +62,21 @@ def add_or_set_message(message: disnake.Message, commit: bool=True) -> Message:
     session.commit()
   return message_it
 
-def get_messages_iterator(guild_id: int, author_id: Optional[int]) -> sqlalchemy.orm.Query:
-  if author_id is not None:
-    query = session.query(Message).filter(Message.id == str(author_id), Message.guild_id == str(guild_id)).order_by(Message.created_at.desc())
-  else:
-    query = session.query(Message).filter(Message.guild_id == str(guild_id)).order_by(Message.created_at.desc())
-  return query
+def get_messages_iterator(guild_id: int, author_id: Optional[int]) -> Iterator[Message]:
+  def get_messages(index: int):
+    if author_id is not None:
+      return session.query(Message).filter(Message.author_id == str(author_id), Message.guild_id == str(guild_id)).order_by(Message.created_at.desc()).offset(index * 2000).limit(2000).all()
+    else:
+      return session.query(Message).filter(Message.guild_id == str(guild_id)).order_by(Message.created_at.desc()).offset(index * 2000).limit(2000).all()
+
+  iter_index = 0
+  messages = get_messages(iter_index)
+  while messages:
+    for message in messages:
+      yield message
+
+    iter_index += 1
+    messages = get_messages(iter_index)
 
 def get_message_metrics(guild_id: int, days_back: int) -> List[Tuple[int, datetime.datetime, int, int]]:
   threshold_date = datetime.datetime.utcnow() - datetime.timedelta(days=days_back)

@@ -148,7 +148,7 @@ class AdminTools(Base_Cog):
                             limit: int=commands.Param(default=100, description="Limit number of messages to retrieve")):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    message_iterator = messages_repo.get_messages_iterator(inter.guild_id, member)
+    message_iterator = messages_repo.get_messages_iterator(inter.guild_id, member.id if member is not None else None)
 
     messages = []
     number_of_messages = 0
@@ -158,6 +158,7 @@ class AdminTools(Base_Cog):
           (ratio(search_term.lower(), message_item.content.lower()) > 0.7):
         messages.append(message_item)
         number_of_messages += 1
+        await asyncio.sleep(0.0005)
         if number_of_messages >= limit:
           break
 
@@ -222,6 +223,7 @@ class AdminTools(Base_Cog):
 
     members = inter.guild.fetch_members(limit=None)
     async for member in members:
+      users_repo.get_or_create_user_if_not_exist(member)
       users_repo.get_or_create_member_if_not_exist(member)
       await asyncio.sleep(0.2)
 

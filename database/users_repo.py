@@ -1,8 +1,7 @@
 import datetime
 
 import disnake
-from typing import Optional, List, Union
-import sqlalchemy.orm
+from typing import Optional, List, Union, Iterator
 
 from database import session
 from database.tables.users import User, Member
@@ -18,8 +17,18 @@ def get_member(member_id: int, guild_id: int) -> Optional[Member]:
     session.commit()
   return member
 
-def get_all_users_iterator() -> sqlalchemy.orm.Query:
-  return session.query(User)
+def get_all_users_iterator() -> Iterator[User]:
+  def get_users(index: int):
+    return session.query(User).offset(2000 * index).limit(2000).all()
+
+  iter_index = 0
+  users = get_users(iter_index)
+  while users:
+    for user in users:
+      yield user
+
+    iter_index += 1
+    users = get_users(iter_index)
 
 def get_or_create_user_if_not_exist(user: Union[disnake.Member, disnake.User]) -> User:
   user_it = get_user(user.id)
@@ -27,6 +36,10 @@ def get_or_create_user_if_not_exist(user: Union[disnake.Member, disnake.User]) -
     user_it = User.from_user(user)
     session.add(user_it)
     session.commit()
+  else:
+    if user_it.name != user.name:
+      user_it.name = user.name
+      session.commit()
   return user_it
 
 def get_or_create_member_if_not_exist(member: disnake.Member) -> Member:

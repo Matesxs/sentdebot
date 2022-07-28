@@ -11,6 +11,8 @@ class User(database.base):
   __tablename__ = "users"
 
   id = Column(String, primary_key=True, unique=True, index=True)
+  name = Column(String, index=True, nullable=True)
+
   created_at = Column(DateTime, nullable=False)
 
   is_bot = Column(Boolean, nullable=False)
@@ -22,7 +24,7 @@ class User(database.base):
 
   @classmethod
   def from_user(cls, user: Union[disnake.Member, disnake.User]):
-    return cls(id=str(user.id), created_at=user.created_at, is_bot=user.bot, is_system=user.system)
+    return cls(id=str(user.id), created_at=user.created_at, is_bot=user.bot, is_system=user.system, name=user.name)
 
   async def to_object(self, bot: commands.Bot) -> Optional[disnake.User]:
     user = bot.get_user(int(self.id))

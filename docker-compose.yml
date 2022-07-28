@@ -10,6 +10,7 @@ services:
             POSTGRES_HOST_AUTH_METHOD: "trust"
         volumes:
             - postgres_data:/var/lib/postgresql/data/
+        restart: on-failure
     bot:
         build: .
         container_name: sentdebot
@@ -17,7 +18,7 @@ services:
             -   .:/sentdebot/
         depends_on:
             - db
-        restart: always
+        restart: on-failure
     adminer:
         image: adminer
         container_name: sentdebot-adminer
@@ -25,6 +26,7 @@ services:
             - "8080:8080"
         depends_on:
             - db
+        restart: on-failure
 
 volumes:
     postgres_data:

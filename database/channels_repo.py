@@ -14,6 +14,11 @@ def get_or_create_text_thread(thread: disnake.Thread) -> TextThread:
     thread_it = TextThread.from_thread(thread)
     session.add(thread_it)
     session.commit()
+  else:
+    if thread_it.archived != thread.archived or thread_it.locked != thread_it.locked:
+      thread_it.archived = thread.archived
+      thread_it.locked = thread.locked
+      session.commit()
   return thread_it
 
 def remove_thread(thread_id: int):

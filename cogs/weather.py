@@ -74,7 +74,6 @@ def _get_useful_data(all_data: dict) -> List[dict]:
 
 
 async def _create_embeds(inter: disnake.CommandInteraction, place: str) -> Optional[List[disnake.Embed]]:
-  """create embeds for scrollable embed"""
   safe_name: str = urllib.parse.quote_plus(place)
   url = f"https://wttr.in/{safe_name}?format=j1&lang=en"
   try:
