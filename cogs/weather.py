@@ -140,7 +140,7 @@ class Weather(Base_Cog):
 
   @weather.sub_command(name="set_place", description=Strings.weather_set_place_brief)
   @cooldowns.default_cooldown
-  async def set_weather_place(self, inter: disnake.CommandInteraction, *, place: str):
+  async def set_weather_place(self, inter: disnake.CommandInteraction, *, place: str=commands.Param(description="Place where to request weather for")):
     if not _place_is_valid(place):
       return general_util.generate_error_message(inter, Strings.weather_set_place_invalid_place)
 
@@ -154,9 +154,9 @@ class Weather(Base_Cog):
       return await general_util.generate_error_message(inter, Strings.weather_unset_place_not_place_to_remove)
     await general_util.generate_success_message(inter, Strings.weather_unset_place_removed)
 
-  @weather.sub_command(name="weather", description=Strings.weather_request_weather_breif)
+  @weather.sub_command(name="get", description=Strings.weather_request_weather_breif)
   @cooldowns.default_cooldown
-  async def weather_request(self, inter: disnake.CommandInteraction, *, place: Optional[str] = None):
+  async def weather_request(self, inter: disnake.CommandInteraction, place: Optional[str]=commands.Param(default=None, description="Place where to request weather for")):
     await inter.response.defer(with_message=True)
 
     if place is None:
