@@ -5,6 +5,7 @@ import json
 from typing import Optional, List
 import disnake
 from disnake.ext import commands
+import cachetools
 
 from config import cooldowns
 from util import general_util
@@ -23,13 +24,14 @@ DAY_PHASES = {
 
 def _get_current_day_phase() -> str:
   now = datetime.datetime.now()
+  day_phases = list(DAY_PHASES.keys())
   if now.hour <= 6:
-    return "Morning"
+    return day_phases[0]
   if now.hour <= 12:
-    return "Day"
+    return day_phases[1]
   if now.hour <= 18:
-    return "Evening"
-  return "Night"
+    return day_phases[2]
+  return day_phases[3]
 
 
 def _celsius_to_fahrenheit(value):
@@ -146,6 +148,8 @@ class Weather(Base_Cog):
   def __init__(self, bot: commands.Bot):
     super(Weather, self).__init__(bot, __file__)
 
+    self.place_weather_prediction_cache = cachetools.LRUCache(maxsize=20)
+
   @commands.slash_command()
   async def weather(self, inter: disnake.CommandInteraction):
     pass
@@ -180,7 +184,20 @@ class Weather(Base_Cog):
     if place is None:
       return await general_util.generate_error_message(inter, Strings.weather_request_weather_place_not_set)
 
-    embeds = await _create_embeds(inter, place)
+    if place in self.place_weather_prediction_cache.keys():
+      cache_item = self.place_weather_prediction_cache.get(place)
+      if datetime.datetime.utcnow() - cache_item[0] > datetime.timedelta(minutes=20):
+        self.place_weather_prediction_cache.pop(place)
+
+        embeds = await _create_embeds(inter, place)
+        if embeds is not None:
+          self.place_weather_prediction_cache[place] = (datetime.datetime.utcnow(), embeds)
+      else:
+        embeds = cache_item[1]
+    else:
+      embeds = await _create_embeds(inter, place)
+      if embeds is not None:
+        self.place_weather_prediction_cache[place] = (datetime.datetime.utcnow(), embeds)
 
     if embeds is None:
       return await general_util.generate_error_message(inter, Strings.weather_request_weather_error)

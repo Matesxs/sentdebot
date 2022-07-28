@@ -18,8 +18,6 @@ success_duration = 30
 # This address is for usage with docker deployment
 connect_string = "postgresql://postgres:postgres@db:5432/postgres" # Example for testing: "sqlite://database.db" For docker workflow: "postgresql://postgres:postgres@db:5432/postgres"
 
-max_number_of_cached_help_requests = 500
-
 
 [ids]
 main_guild = 988202173152260176

@@ -17,6 +17,7 @@ services:
             -   .:/sentdebot/
         depends_on:
             - db
+        restart: always
     adminer:
         image: adminer
         container_name: sentdebot-adminer
