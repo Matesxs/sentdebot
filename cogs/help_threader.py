@@ -119,12 +119,15 @@ class HelpThreader(Base_Cog):
       return await general_util.generate_error_message(interaction, Strings.help_threader_help_channel_not_found)
 
     try:
+      main_guild = self.bot.get_guild(config.ids.main_guild)
+      main_guild_member = disnake.utils.get(main_guild.members, id=interaction.author.id)
+
       completed_message = f"{description}" if tags is None else f"{tags}\n{description}"
       message = await help_channel.send(completed_message)
-      thread = await help_channel.create_thread(name=title, message=message, auto_archive_duration=1440, reason=f"Help request from {interaction.author}")
+      thread = await help_channel.create_thread(name=title, message=message, auto_archive_duration=1440, reason=f"Help request from {main_guild_member}")
       await thread.add_user(interaction.author)
 
-      if help_threads_repo.create_thread(thread, interaction.author, tags) is None:
+      if help_threads_repo.create_thread(thread, main_guild_member, tags) is None:
         return await general_util.generate_error_message(interaction, Strings.help_threader_request_create_failed)
 
       await thread.send(Strings.help_threader_announcement)

@@ -2,7 +2,6 @@ from typing import Optional, List
 import datetime
 import disnake
 
-from config import config
 from database import session
 from database.tables.help_threads import HelpThread
 from database import users_repo, channels_repo
@@ -20,12 +19,10 @@ def update_thread_activity(thread_id: int, new_activity: datetime.datetime, comm
     session.commit()
 
 def create_thread(thread: disnake.Thread, owner: disnake.Member, tags: Optional[str]=None) -> Optional[HelpThread]:
-  users_repo.get_or_create_member_if_not_exist(owner)
-  member_iid_of_main_guild = users_repo.member_identifier_to_member_iid(owner.id, config.ids.main_guild)
-  if member_iid_of_main_guild is None: return None
+  member = users_repo.get_or_create_member_if_not_exist(owner)
 
   channels_repo.get_or_create_text_thread(thread)
-  item = HelpThread(thread_id=str(thread.id), member_iid=member_iid_of_main_guild, owner_id=str(owner.id), tags=tags)
+  item = HelpThread(thread_id=str(thread.id), member_iid=member.member_iid, owner_id=str(owner.id), tags=tags)
   session.add(item)
   session.commit()
 
