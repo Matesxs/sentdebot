@@ -67,8 +67,7 @@ class System(Base_Cog):
     pass
 
   @extensions.sub_command(name="load", description=Strings.system_load_brief)
-  @commands.check(general_util.is_administrator)
-  @commands.guild_only()
+  @commands.is_owner()
   async def load(self, inter: disnake.CommandInteraction, extension_name: str=commands.Param(autocomplete=unloaded_cogs_autocomplete, description="Name of extension to load")):
     if extension_name.lower() == "all":
       final_embed = disnake.Embed(title="Extensions loaded", color=disnake.Color.green(), description="Failed extensions:")
@@ -99,8 +98,7 @@ class System(Base_Cog):
         await general_util.generate_error_message(inter, Strings.system_unable_to_load_cog(cog=extension_name, e=e))
 
   @extensions.sub_command(name="unload", description=Strings.system_unload_brief)
-  @commands.check(general_util.is_administrator)
-  @commands.guild_only()
+  @commands.is_owner()
   async def unload(self, inter: disnake.CommandInteraction, extension_name: str=commands.Param(autocomplete=loaded_cogs_not_protected_autocomplete, description="Name of extension to unload")):
     if extension_name in config.cogs.protected:
       return await general_util.generate_error_message(inter, Strings.system_unload_protected_cog(extension=extension_name))
@@ -132,8 +130,7 @@ class System(Base_Cog):
         await general_util.generate_error_message(inter, Strings.system_unable_to_unload_cog(cog=extension_name, e=e))
 
   @extensions.sub_command(name="reload", description=Strings.system_reload_brief)
-  @commands.check(general_util.is_administrator)
-  @commands.guild_only()
+  @commands.is_owner()
   async def reload(self, inter: disnake.CommandInteraction, extension_name: str=commands.Param(autocomplete=loaded_cogs_autocomplete, description="Name of extension to reload")):
     loaded_cogs = [cog.file for cog in self.bot.cogs.values()]
 
@@ -162,8 +159,7 @@ class System(Base_Cog):
         await general_util.generate_error_message(inter, Strings.system_unable_to_reload_cog(cog=extension_name, e=e))
 
   @extensions.sub_command(name="list", description=Strings.system_cogs_brief)
-  @commands.check(general_util.is_administrator)
-  @commands.guild_only()
+  @commands.is_owner()
   async def cogs(self, inter: disnake.CommandInteraction):
     cogs_in_folder = general_util.get_cogs_in_folder()
     loaded_cogs = [cog.file for cog in self.bot.cogs.values()]
@@ -184,8 +180,7 @@ class System(Base_Cog):
     await EmbedView(inter.author, pages, perma_lock=True).run(inter)
 
   @commands.command(brief=Strings.system_logout_brief, aliases=["gtfo"])
-  @commands.check(general_util.is_administrator)
-  @commands.guild_only()
+  @commands.is_owner()
   async def logout(self, ctx: commands.Context):
     await general_util.delete_message(self.bot, ctx)
     await ctx.send("Cya :wave:")

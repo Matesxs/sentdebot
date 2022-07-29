@@ -134,7 +134,7 @@ class AdminTools(Base_Cog):
     await general_util.generate_success_message(ctx, f"Deleted {len(deleted_messages)} message(s)")
 
   @commands.slash_command()
-  @commands.check(general_util.is_administrator)
+  @commands.check(general_util.is_mod)
   async def essentials(self, inter: disnake.CommandInteraction):
     pass
 
