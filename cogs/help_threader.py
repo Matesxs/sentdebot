@@ -61,7 +61,7 @@ class HelpThreader(Base_Cog):
         logger.info(f"[Auto close task] Thread {thread.id} is already closed")
         continue
 
-      owner = await general_util.get_or_fetch_member(thread.guild, int(help_req_item.owner_id)) if help_req_item.owner_id is not None else None
+      owner = await help_req_item.member.to_object(self.bot) if help_req_item.member_iid is not None else None
       if owner is None:
         # Owner of that thread is not on server anymore
         logger.info(f"[Auto close task] Owner of thread {thread.id} is not on server anymore, locking it up")
@@ -124,7 +124,8 @@ class HelpThreader(Base_Cog):
       thread = await help_channel.create_thread(name=title, message=message, auto_archive_duration=1440, reason=f"Help request from {interaction.author}")
       await thread.add_user(interaction.author)
 
-      help_threads_repo.create_thread(thread, interaction.author, tags)
+      if help_threads_repo.create_thread(thread, interaction.author, tags) is None:
+        return await general_util.generate_error_message(interaction, Strings.help_threader_request_create_failed)
 
       await thread.send(Strings.help_threader_announcement)
     except disnake.HTTPException:
@@ -169,7 +170,7 @@ class HelpThreader(Base_Cog):
         help_threads_repo.delete_thread(help_thread.id)
         continue
 
-      owner = await general_util.get_or_fetch_member(help_thread.guild, int(record.owner_id)) if record.owner_id is not None else None
+      owner = await record.member.to_object(self.bot) if record.member_iid is not None else None
       if owner is None:
         # Owner of that thread is not on server anymore
         logger.info(f"Owner of thread {help_thread.id} is not on server anymore")
@@ -212,7 +213,8 @@ class HelpThreader(Base_Cog):
     if record is None:
       return await general_util.generate_error_message(inter, Strings.help_threader_request_solved_not_found)
 
-    if int(record.owner_id) != inter.author.id and not general_util.is_mod(inter):
+
+    if (record.member is None or int(record.member.id) != inter.author.id) and not general_util.is_mod(inter):
       return await general_util.generate_error_message(inter, Strings.help_threader_request_solved_not_owner)
 
     help_threads_repo.delete_thread(thread_message_id)

@@ -66,3 +66,8 @@ def delete_left_members(days_after_left: int, commit: bool=True):
 
 def members_joined_in_timeframe(from_date: datetime.datetime, to_date: datetime.datetime, guild_id: int) -> List[Member]:
   return session.query(Member).filter(Member.joined_at >= from_date, Member.joined_at <= to_date, Member.guild_id == str(guild_id)).order_by(Member.joined_at.desc()).all()
+
+def member_identifier_to_member_iid(user_id: int, guild_id: int) -> Optional[int]:
+  data = session.query(Member.member_iid).filter(Member.id == str(user_id), Member.guild_id == str(guild_id)).one_or_none()
+  if data is None: return None
+  return data[0]

@@ -1,11 +1,11 @@
 import disnake
 from disnake.ext import commands
 from typing import Union, Optional
-from sqlalchemy import Column, DateTime, String, PrimaryKeyConstraint, ForeignKey, Boolean
+from sqlalchemy import Column, DateTime, String, UniqueConstraint, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 from util import general_util
-from database import database
+from database import database, BigIntegerType
 
 class User(database.base):
   __tablename__ = "users"
@@ -21,6 +21,8 @@ class User(database.base):
   members = relationship("Member", back_populates="user", uselist=True)
   help_requests = relationship("HelpThread", uselist=True)
   weather_settings = relationship("WeatherSettings", back_populates="user", uselist=False)
+  audit_logs = relationship("AuditLog", back_populates="user", uselist=True)
+  messages = relationship("Message", back_populates="user", uselist=True)
 
   @classmethod
   def from_user(cls, user: Union[disnake.Member, disnake.User]):
@@ -37,10 +39,11 @@ class User(database.base):
 
 class Member(database.base):
   __tablename__ = "members"
-  __table_args__ = (PrimaryKeyConstraint("id", "guild_id", name="guild_member_id"),)
+  __table_args__ = (UniqueConstraint("id", "guild_id", name="guild_member_id"),)
 
   id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
   guild_id = Column(String, ForeignKey("guilds.id", ondelete="CASCADE"), index=True, nullable=False)
+  member_iid = Column(BigIntegerType, index=True, autoincrement=True, unique=True, primary_key=True)
 
   nick = Column(String, nullable=False)
   icon_url = Column(String)
@@ -52,8 +55,8 @@ class Member(database.base):
   joined_at = Column(DateTime, nullable=False, index=True)
   left_at = Column(DateTime, index=True)
 
-  audit_logs = relationship("AuditLog", primaryjoin="and_(foreign(Member.id) == AuditLog.user_id, foreign(Member.guild_id) == AuditLog.guild_id)", viewonly=True, uselist=True)
-  messages = relationship("Message", primaryjoin="and_(foreign(Member.id) == Message.author_id, foreign(Member.guild_id) == Message.guild_id)", viewonly=True, uselist=True)
+  audit_logs = relationship("AuditLog", back_populates="member", uselist=True)
+  messages = relationship("Message", back_populates="member", uselist=True)
 
   @classmethod
   def from_member(cls, member: disnake.Member):

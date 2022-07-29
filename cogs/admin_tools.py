@@ -223,7 +223,6 @@ class AdminTools(Base_Cog):
 
     members = inter.guild.fetch_members(limit=None)
     async for member in members:
-      users_repo.get_or_create_user_if_not_exist(member)
       users_repo.get_or_create_member_if_not_exist(member)
       await asyncio.sleep(0.2)
 

@@ -30,11 +30,11 @@ def get_author_of_last_message_metric(channel_id: int, thread_id: Optional[int])
   user_id = session.query(Message.author_id).filter(Message.channel_id == str(channel_id), Message.thread_id == (str(thread_id) if thread_id is not None else None), Message.use_for_metrics == True).order_by(Message.created_at.desc()).first()
   return int(user_id[0]) if user_id is not None else None
 
-def add_or_set_message(message: disnake.Message, commit: bool=True) -> Message:
+def add_or_set_message(message: disnake.Message, commit: bool=True) -> Optional[Message]:
   if message.guild is not None and isinstance(message.author, disnake.Member):
     users_repo.get_or_create_member_if_not_exist(message.author)
   else:
-    users_repo.get_or_create_user_if_not_exist(message.author)
+    return None
 
   thread = None
   channel = message.channel
@@ -53,6 +53,8 @@ def add_or_set_message(message: disnake.Message, commit: bool=True) -> Message:
     message_it.use_for_metrics = use_for_metrics
     session.add(message_it)
   else:
+    if message_it.member_iid is None and message_it.guild_id is not None:
+      message_it.member_iid = users_repo.member_identifier_to_member_iid(int(message_it.author_id), int(message_it.guild_id))
     message_it.content = message.content
     message_it.edited_at = message.edited_at
 
