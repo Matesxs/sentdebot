@@ -1,21 +1,20 @@
 from database import session, database
-
-from database.tables import guilds
-from database.tables import channels
-from database.tables import users
-from database.tables import audit_log
-from database.tables import user_metrics
-from database.tables import messages
-from database.tables import projects
-from database.tables import help_threads
-from database.tables import questions_and_answers
-from database.tables import weather_settings
+import pkgutil
+import importlib
 
 from util.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
 
+def load_sub_modules(module):
+  package = importlib.import_module(module)
+
+  for _, name, _ in pkgutil.iter_modules(package.__path__):
+    importlib.import_module(f'{package.__name__}.{name}')
+
 def init_tables():
+  load_sub_modules("database.tables")
+
   database.base.metadata.create_all(database.db)
   session.commit()
 

@@ -35,8 +35,6 @@ class Strings(metaclass=formattable):
 
   system_logout_brief = "Turn off bot"
 
-  system_pull_brief = "Pull latest code from github"
-
   # Help
   help_brief = "Show all message commands and help for them"
   help_name_param_description = "Specify name of command or name of extension as parameter to search help only for thing you want"

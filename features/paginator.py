@@ -1,4 +1,5 @@
 # Basic scroller for embeds
+# Inspired by https://github.com/Toaster192/rubbergod/blob/master/buttons/embed.py
 
 import disnake
 from typing import List, Optional, Union
