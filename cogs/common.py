@@ -1,13 +1,11 @@
 # Basic general use command
 
+import datetime
 import disnake
 from disnake.ext import commands
 from requests_html import HTMLSession
 import time
-import io
-import requests
-from PIL import Image, ImageDraw
-import cachetools
+import humanize
 
 from config import cooldowns
 from static_data.strings import Strings
@@ -19,13 +17,20 @@ class Common(Base_Cog):
   def __init__(self, bot):
     super(Common, self).__init__(bot, __file__)
 
-    self.pet_cache = cachetools.LRUCache(maxsize=20)
-
   @commands.command(name="invite", brief="Send invite link")
   @cooldowns.long_cooldown
   async def invite_link(self, ctx: commands.Context):
     await general_util.delete_message(self.bot, ctx)
     await ctx.send("https://discord.com/oauth2/authorize?client_id=998191988312657960&permissions=1567096171606&scope=bot")
+
+  @commands.command(brief="Show uptime of bot")
+  @cooldowns.default_cooldown
+  async def uptime(self, ctx: commands.Context):
+    await general_util.delete_message(self.bot, ctx)
+    description = f"{humanize.naturaldelta(datetime.datetime.utcnow() - self.bot.start_time)}\nLast error: {humanize.naturaltime(datetime.datetime.utcnow() - self.bot.last_error) if self.bot.last_error is not None else 'Never'}"
+    embed = disnake.Embed(title="Uptime", description=description, color=disnake.Color.dark_blue())
+    general_util.add_author_footer(embed, ctx.author)
+    await ctx.send(embed=embed)
 
   @commands.message_command(name="Pin message")
   @commands.check(general_util.is_mod)
@@ -85,61 +90,6 @@ class Common(Base_Cog):
       await ctx.send(embed=embed)
     else:
       await general_util.generate_error_message(ctx, Strings.common_search_nothing_found(term=search_term))
-
-  @commands.slash_command(name="pet", description=Strings.common_pet_brief)
-  @cooldowns.short_cooldown
-  async def pet(self, inter: disnake.CommandInteraction, user: disnake.Member = commands.Param(default=None, description="User to pet")):
-    if user is None:
-      user = inter.author
-
-    if user.id in self.pet_cache.keys():
-      image_binary = self.pet_cache.get(user.id)
-    else:
-      if not user.avatar:
-        url = user.display_avatar.with_format('png').url
-      else:
-        url = user.display_avatar.with_format('jpg').url
-      response = requests.get(url, timeout=10)
-      avatarFull = Image.open(io.BytesIO(response.content))
-
-      if not user.avatar:
-        avatarFull = avatarFull.convert("RGB")
-
-      frames = []
-      deformWidth = [-1, -2, 1, 2, 1]
-      deformHeight = [4, 3, 1, 1, -4]
-      width = 80
-      height = 80
-
-      for i in range(5):
-        frame = Image.new('RGBA', (112, 112), (255, 255, 255, 1))
-        hand = Image.open(f"static_data/pet/{i}.png")
-        width = width - deformWidth[i]
-        height = height - deformHeight[i]
-        avatar = avatarFull.resize((width, height))
-        avatarMask = Image.new('1', avatar.size, 0)
-        draw = ImageDraw.Draw(avatarMask)
-        draw.ellipse((0, 0) + avatar.size, fill=255)
-        avatar.putalpha(avatarMask)
-
-        frame.paste(avatar, (112 - width, 112 - height), avatar)
-        frame.paste(hand, (0, 0), hand)
-        frames.append(frame)
-
-      image_binary = io.BytesIO()
-      frames[0].save(image_binary, format='GIF', save_all=True,
-                     append_images=frames[1:], duration=40,
-                     loop=0, transparency=0, disposal=2, optimize=False)
-      self.pet_cache[user.id] = image_binary
-
-    image_binary.seek(0)
-    await inter.response.send_message(file=disnake.File(fp=image_binary, filename="pet.gif"))
-
-  @pet.error
-  async def pet_error(self, inter: disnake.CommandInteraction, error):
-    if isinstance(error, commands.MemberNotFound):
-      await inter.response.send_message(Strings.common_pet_user_not_found)
-      return True
 
   @commands.slash_command(name="vote", description=Strings.common_vote_brief)
   @cooldowns.long_cooldown
