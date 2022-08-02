@@ -10,7 +10,7 @@ from util import general_util
 from database import projects_repo
 
 class Projects(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(Projects, self).__init__(bot, __file__)
 
   @commands.slash_command(name="projects")

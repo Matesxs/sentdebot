@@ -34,7 +34,7 @@ def getApproximateAnswer(q):
   return None, None, None
 
 class AutoHelp(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(AutoHelp, self).__init__(bot, __file__)
 
   @commands.Cog.listener()

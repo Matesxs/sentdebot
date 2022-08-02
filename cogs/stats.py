@@ -38,7 +38,7 @@ def df_match(c1, c2):
     return c1
 
 class Stats(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(Stats, self).__init__(bot, __file__)
 
     self.user_activity_image: Dict[int, Tuple[io.BytesIO, datetime.datetime]] = {}

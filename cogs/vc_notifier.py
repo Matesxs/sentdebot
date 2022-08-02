@@ -19,7 +19,7 @@ def generate_nick_string(members: List[disnake.Member]):
   return f"{members[0].name}"
 
 class VCNotifier(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(VCNotifier, self).__init__(bot, __file__)
 
     self.voice_channel_ids = [channel for channel in config.voice_channel_notifier.vc_channel_ids]
@@ -143,7 +143,7 @@ class VCNotifier(Base_Cog):
 
     return number_of_members
 
-  async def get_n_oldest_members(self, channel: disnake.VoiceChannel, number_of_members: int) -> List[disnake.Member]:
+  async def get_n_oldest_members(self, channel: disnake.abc.GuildChannel, number_of_members: int) -> List[disnake.Member]:
     list_of_members = list(self.voice_channel_members[channel.id].items())
     list_of_members.sort(key=lambda tup: tup[1])
 

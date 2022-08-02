@@ -1,5 +1,5 @@
 # Error handling extension
-
+import datetime
 import disnake
 from disnake.ext import commands
 import traceback
@@ -9,11 +9,12 @@ from util.logger import setup_custom_logger
 from static_data.strings import Strings
 from features.base_cog import Base_Cog
 from config import config
+from features.base_bot import BaseAutoshardedBot
 
 logger = setup_custom_logger(__name__)
 
 class Errors(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot: BaseAutoshardedBot):
     super(Errors, self).__init__(bot, __file__)
 
   @commands.Cog.listener()
@@ -56,6 +57,8 @@ class Errors(Base_Cog):
     elif isinstance(error, disnake.HTTPException) and error.code == 50007:
       await general_util.generate_error_message(ctx, Strings.error_blocked_dms)
     else:
+      self.bot.last_error = datetime.datetime.utcnow()
+
       output = "".join(traceback.format_exception(type(error), error, error.__traceback__))
       logger.error(output)
 
@@ -84,6 +87,8 @@ class Errors(Base_Cog):
 
   @commands.Cog.listener()
   async def on_error(self, event_method, *args, _):
+    self.bot.last_error = datetime.datetime.utcnow()
+
     output = traceback.format_exc()
     logger.error(output)
 

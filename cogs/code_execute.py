@@ -13,7 +13,7 @@ from features.base_cog import Base_Cog
 language_regex = re.compile(r"([\w\s\d]+)*```(\w*)([\s\S]*)```$")
 
 class Code_Execute(Base_Cog):
-  def __init__(self, bot:commands.Bot):
+  def __init__(self, bot):
     super(Code_Execute, self).__init__(bot, __file__)
 
   @staticmethod

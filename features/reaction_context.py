@@ -1,6 +1,7 @@
 import disnake
-from disnake.ext.commands import Bot
 from typing import Union, Optional
+
+from features.base_bot import BaseAutoshardedBot
 
 class ReactionContext:
     def __init__(self, channel: disnake.TextChannel, guild: Optional[disnake.Guild], author: Union[disnake.Member, disnake.User], message: disnake.Message, reply_to: Optional[disnake.Message], emoji: Union[disnake.Emoji, str]):
@@ -12,7 +13,7 @@ class ReactionContext:
         self.emoji = emoji
 
     @classmethod
-    async def from_payload(cls, bot: Bot, payload: disnake.RawReactionActionEvent):
+    async def from_payload(cls, bot: BaseAutoshardedBot, payload: disnake.RawReactionActionEvent):
         channel = bot.get_channel(payload.channel_id)
         guild = None
 

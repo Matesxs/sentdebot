@@ -57,7 +57,7 @@ async def loaded_cogs_not_protected_autocomplete(_, search: str):
   return ret[:25]
 
 class System(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     global global_bot_reference
     global_bot_reference = bot
     super(System, self).__init__(bot, __file__)

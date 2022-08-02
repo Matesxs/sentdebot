@@ -14,10 +14,9 @@ from static_data.strings import Strings
 from features.base_cog import Base_Cog
 from util import general_util
 from modals.vote_modal import VoteSetupModal
-from database import messages_repo
 
 class Common(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(Common, self).__init__(bot, __file__)
 
     self.pet_cache = cachetools.LRUCache(maxsize=20)

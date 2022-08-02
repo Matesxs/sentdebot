@@ -12,6 +12,7 @@ from config import config
 from features.base_cog import Base_Cog
 from util.logger import setup_custom_logger
 from util import general_util
+from features.base_bot import BaseAutoshardedBot
 
 logger = setup_custom_logger(__name__)
 
@@ -29,7 +30,7 @@ class WardenMessageData:
 
   attachment_hashes: List[str]
 
-  async def to_object(self, bot: commands.Bot) -> Optional[disnake.Message]:
+  async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.Message]:
     message = await general_util.get_or_fetch_message(bot, None, self.message_id)
     if message is None:
       channel = await general_util.get_or_fetch_channel(bot, self.channel_id if self.thread_id is None else self.thread_id)
@@ -71,7 +72,7 @@ async def generate_message_hash(message: disnake.Message) -> WardenMessageData:
 
 
 class Warden(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(Warden, self).__init__(bot, __file__)
 
     self.strikes: Dict[int, int] = {}

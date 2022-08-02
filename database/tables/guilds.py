@@ -1,10 +1,10 @@
 import disnake
-from disnake.ext import commands
 from typing import Optional
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 
 from database import database
+from features.base_bot import BaseAutoshardedBot
 
 class Guild(database.base):
   __tablename__ = "guilds"
@@ -19,7 +19,7 @@ class Guild(database.base):
   def from_guild(cls, guild: disnake.Guild):
     return cls(id=str(guild.id))
 
-  async def to_object(self, bot: commands.Bot) -> Optional[disnake.Guild]:
+  async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.Guild]:
     guild = bot.get_guild(int(self.id))
     if guild is None:
       try:

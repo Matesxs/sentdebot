@@ -1,7 +1,7 @@
 import datetime
 import disnake
 from disnake.ext import commands, tasks
-from typing import Optional, Union
+from typing import Optional
 
 from util.logger import setup_custom_logger
 from config import config
@@ -10,9 +10,9 @@ from features.base_cog import Base_Cog
 
 logger = setup_custom_logger(__name__)
 
-class Auditlog(Base_Cog):
-  def __init__(self, bot: commands.Bot):
-    super(Auditlog, self).__init__(bot, __file__)
+class DataCollection(Base_Cog):
+  def __init__(self, bot):
+    super(DataCollection, self).__init__(bot, __file__)
 
     if not self.cleanup_taks.is_running():
       self.cleanup_taks.start()
@@ -168,4 +168,4 @@ class Auditlog(Base_Cog):
     logger.info("Cleanup finished")
 
 def setup(bot):
-  bot.add_cog(Auditlog(bot))
+  bot.add_cog(DataCollection(bot))

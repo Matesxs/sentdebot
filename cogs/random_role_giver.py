@@ -18,7 +18,7 @@ def have_random_role(member: disnake.Member):
 
 
 class RandomRoleGiver(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(RandomRoleGiver, self).__init__(bot, __file__)
 
     self.chance = max(min(config.random_role_giver.chance, 100), 0)
@@ -50,7 +50,7 @@ class RandomRoleGiver(Base_Cog):
         logger.info(f"User {message.author.name} was awarded with {selected_role.name} role")
       except disnake.Forbidden:
         logger.error(f"Failed to give user {message.author.display_name} '{selected_role.name}' ({selected_role_id}) role - Missing permissions")
-      except Exception as e:
+      except Exception:
         logger.error(f"Failed to give user {message.author.display_name} '{selected_role.name}' ({selected_role_id}) role\n{traceback.format_exc()}")
 
 def setup(bot):

@@ -1,11 +1,11 @@
 import disnake
-from disnake.ext import commands
 from sqlalchemy import Column, DateTime, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from typing import Optional, Union
 
 from database import database
 from util import general_util
+from features.base_bot import BaseAutoshardedBot
 
 class TextThread(database.base):
   __tablename__ = "text_threads"
@@ -25,7 +25,7 @@ class TextThread(database.base):
   def from_thread(cls, thread: disnake.Thread):
     return cls(id=str(thread.id), channel_id=str(thread.parent.id), created_at=thread.created_at, archived=thread.archived, locked=thread.locked)
 
-  async def to_object(self, bot: commands.Bot) -> Optional[disnake.Thread]:
+  async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.Thread]:
     channel = await self.channel.to_object(bot)
     if channel is None:
       guild = await self.channel.guild.to_object(bot)
@@ -54,7 +54,7 @@ class TextChannel(database.base):
   def from_text_channel(cls, channel: Union[disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel]):
     return cls(id=str(channel.id), guild_id=str(channel.guild.id), created_at=channel.created_at)
 
-  async def to_object(self, bot: commands.Bot) -> Optional[Union[disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel]]:
+  async def to_object(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel]]:
     guild = await self.guild.to_object(bot)
     if guild is None: return None
     channel = await general_util.get_or_fetch_channel(guild, int(self.id))

@@ -144,7 +144,7 @@ def _place_is_valid(name: str) -> bool:
 
 
 class Weather(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(Weather, self).__init__(bot, __file__)
 
     self.place_weather_prediction_cache = cachetools.LRUCache(maxsize=20)

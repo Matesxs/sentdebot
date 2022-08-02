@@ -71,7 +71,7 @@ def split_to_parts(items: str, length: int):
 
   return result
 
-async def delete_message(bot: commands.Bot, cnt: Union[commands.Context, disnake.Message, disnake.CommandInteraction]):
+async def delete_message(bot: commands.BotBase, cnt: Union[commands.Context, disnake.Message, disnake.CommandInteraction]):
   if isinstance(cnt, disnake.CommandInteraction):
     return
 
@@ -137,7 +137,7 @@ def get_user_stats(guild) -> Tuple[int, int, int]:
 
   return online, idle, offline
 
-async def get_or_fetch_channel(source: Union[disnake.Guild, commands.Bot], channel_id: int):
+async def get_or_fetch_channel(source: Union[disnake.Guild, commands.BotBase], channel_id: int):
   channel = source.get_channel(channel_id)
   if channel is None:
     try:
@@ -147,7 +147,7 @@ async def get_or_fetch_channel(source: Union[disnake.Guild, commands.Bot], chann
 
   return channel
 
-async def get_or_fetch_message(bot: commands.Bot, source: Optional[Union[disnake.TextChannel, disnake.Thread]], message_id: int):
+async def get_or_fetch_message(bot: commands.BotBase, source: Optional[Union[disnake.TextChannel, disnake.Thread]], message_id: int):
   message = bot.get_message(message_id)
   if message is None and source is not None:
     try:
@@ -156,7 +156,7 @@ async def get_or_fetch_message(bot: commands.Bot, source: Optional[Union[disnake
       return None
   return message
 
-async def get_or_fetch_member(source: Union[disnake.Guild, commands.Bot], member_id: int):
+async def get_or_fetch_member(source: Union[disnake.Guild, commands.BotBase], member_id: int):
   if isinstance(source, disnake.Guild):
     user = source.get_member(member_id)
     if user is None:

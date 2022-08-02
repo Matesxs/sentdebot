@@ -20,7 +20,7 @@ from modals.create_help_request import HelpRequestModal
 logger = setup_custom_logger(__name__)
 
 class HelpThreader(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(HelpThreader, self).__init__(bot, __file__)
     if self.bot.is_ready():
       self.close_unactive_threads_task.start()

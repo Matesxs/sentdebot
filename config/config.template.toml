@@ -35,7 +35,7 @@ warden_whitelisted_users = []
 
 [cogs]
 # Cogs that will be loaded on startup and unable to be unloaded
-protected = ["system", "errors", "help", "listeners", "auditlog", "admin_tools"]
+protected = ["system", "errors", "help", "listeners", "data_collection", "admin_tools"]
 # Cogs automatically loaded after start
 defaul_loaded = ["common", "code_execute", "projects", "weather", "random_role_giver", "stats", "help_threader", "bookmarks", "vc_notifier", "auto_help", "warden"]
 

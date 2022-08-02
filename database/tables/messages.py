@@ -1,5 +1,4 @@
 import disnake
-from disnake.ext import commands
 from typing import Optional
 from sqlalchemy import Column, DateTime, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
@@ -7,6 +6,7 @@ from sqlalchemy.orm import relationship
 from database import database, BigIntegerType
 from database import users_repo
 from util import general_util
+from features.base_bot import BaseAutoshardedBot
 
 class MessageAttachment(database.base):
   __tablename__ = "message_attachments"
@@ -62,7 +62,7 @@ class Message(database.base):
                thread_id=str(thread_id) if thread_id is not None else None,
                content=message.content)
 
-  async def to_object(self, bot: commands.Bot) -> Optional[disnake.Message]:
+  async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.Message]:
     message = await general_util.get_or_fetch_message(bot, None, int(self.id))
     if message is None:
       channel = await self.channel.to_object(bot)

@@ -11,6 +11,7 @@ from features.paginator import EmbedView
 from features.base_cog import Base_Cog
 from util.logger import setup_custom_logger
 from typing import Union, List, Optional
+from features.base_bot import BaseAutoshardedBot
 
 logger = setup_custom_logger(__name__)
 
@@ -32,7 +33,7 @@ async def command_check(com, ctx):
 
   return True
 
-async def get_all_commands(bot: commands.Bot, ctx):
+async def get_all_commands(bot: BaseAutoshardedBot, ctx):
   return [com for cog in bot.cogs.values() for com in cog.walk_commands() if isinstance(com, commands.Command) and not com.hidden and await command_check(com, ctx)]
 
 async def help_name_autocomplete(inter, string):
@@ -89,7 +90,7 @@ async def generate_help_for_cog(cog: Base_Cog, ctx) -> Union[None, List[disnake.
   return pages
 
 class Help(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(Help, self).__init__(bot, __file__)
 
   @commands.slash_command(name="help", description=Strings.help_brief)

@@ -17,7 +17,7 @@ from features.paginator import EmbedView
 logger = setup_custom_logger(__name__)
 
 class AdminTools(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(AdminTools, self).__init__(bot, __file__)
 
   async def delete_users_messages(self, user_id: int, guild_id: int, hours_back: float):
@@ -279,15 +279,6 @@ class AdminTools(Base_Cog):
   async def remove_message_data(self, inter: disnake.CommandInteraction, member: disnake.Member=commands.Param(description="User for which delete the message data")):
     messages_repo.remove_message_data(member.author.id, member.guild.id)
     await general_util.generate_success_message(inter, Strings.admin_tools_remove_message_data_deleted)
-
-  @commands.message_command(name="Remove bots message")
-  @commands.check(general_util.is_administrator)
-  @cooldowns.default_cooldown
-  async def remove_bots_message(self, inter: disnake.MessageCommandInteraction, message: disnake.Message):
-    if message.author.id != self.bot.user.id:
-      return await general_util.generate_error_message(inter, "Invalid message author")
-    await message.delete()
-    await general_util.generate_success_message(inter, "Message removed")
 
 def setup(bot):
   bot.add_cog(AdminTools(bot))

@@ -1,14 +1,14 @@
 import datetime
 import disnake
-from disnake.ext import commands
 from typing import Optional, Union
 
 from database import session
 from database.tables.audit_log import AuditLogItemType, AuditLog
 from database.users_repo import get_or_create_member_if_not_exist, member_identifier_to_member_iid
 from database.messages_repo import Message
+from features.base_bot import BaseAutoshardedBot
 
-async def create_message_edited_log(bot: commands.Bot, before: Optional[Union[disnake.Message, Message]], after: disnake.Message) -> AuditLog:
+async def create_message_edited_log(bot: BaseAutoshardedBot, before: Optional[Union[disnake.Message, Message]], after: disnake.Message) -> AuditLog:
   thread = None
   channel = after.channel
   if isinstance(channel, disnake.Thread):

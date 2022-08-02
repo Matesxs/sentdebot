@@ -11,7 +11,7 @@ from util.logger import setup_custom_logger
 logger = setup_custom_logger(__name__)
 
 class Listeners(Base_Cog):
-  def __init__(self, bot: commands.Bot):
+  def __init__(self, bot):
     super(Listeners, self).__init__(bot, __file__)
 
   @commands.Cog.listener()
