@@ -95,6 +95,9 @@ class Auditlog(Base_Cog):
     if after.author.bot: return
     if after.content.startswith(config.base.command_prefix): return
 
+    if not users_repo.can_collect_data(after.author.id, after.guild.id):
+      return
+
     message_item = messages_repo.get_message(after.id)
     if before is None:
       before = message_item
@@ -107,9 +110,7 @@ class Auditlog(Base_Cog):
 
     await audit_log_repo.create_message_edited_log(self.bot, before, after)
 
-    message_item.edited_at = after.edited_at
-    message_item.content = after.content
-    messages_repo.update_attachments(message_item, after.attachments)
+    messages_repo.add_or_set_message(after, commit=True)
 
   @commands.Cog.listener()
   async def on_message_delete(self, message: disnake.Message):

@@ -14,6 +14,7 @@ from static_data.strings import Strings
 from features.base_cog import Base_Cog
 from util import general_util
 from modals.vote_modal import VoteSetupModal
+from database import messages_repo
 
 class Common(Base_Cog):
   def __init__(self, bot: commands.Bot):

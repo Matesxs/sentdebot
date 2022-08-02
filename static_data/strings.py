@@ -177,6 +177,9 @@ class Strings(metaclass=formattable):
   admin_tools_purge_bot_messages_description = "Clear old bots messages"
   admin_tools_purge_bot_messages_invalid_channel = "Invalid channel"
 
+  admin_tools_remove_message_data_description = "Remove collected message data from database"
+  admin_tools_remove_message_data_deleted = "Your data were removed"
+
   # Weather
   weather_set_place_brief = "Set default weather place"
   weather_set_place_invalid_place = "Place is not valid"

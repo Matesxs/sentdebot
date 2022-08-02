@@ -71,3 +71,9 @@ def member_identifier_to_member_iid(user_id: int, guild_id: int) -> Optional[int
   data = session.query(Member.member_iid).filter(Member.id == str(user_id), Member.guild_id == str(guild_id)).one_or_none()
   if data is None: return None
   return data[0]
+
+def can_collect_data(user_id: int, guild_id: int) -> bool:
+  data = session.query(Member.collect_data).filter(Member.id == str(user_id), Member.guild_id == str(guild_id)).one_or_none()
+  if data is None: return True
+  if data[0]: return True
+  return False

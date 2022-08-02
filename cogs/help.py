@@ -1,6 +1,6 @@
 # Custom help cog
 
-import math
+import asyncio
 import disnake
 from disnake.ext import commands
 
@@ -14,25 +14,30 @@ from typing import Union, List, Optional
 
 logger = setup_custom_logger(__name__)
 
-def command_check(com, ctx):
+async def command_check(com, ctx):
   if not com.checks:
     return True
 
   for check in com.checks:
     try:
-      if not check(ctx):
-        return False
+      if asyncio.iscoroutinefunction(check):
+        result = await check(ctx)
+        if not result:
+          return False
+      else:
+        if not check(ctx):
+          return False
     except Exception:
       return False
 
   return True
 
-def get_all_commands(bot: commands.Bot, ctx):
-  return [com for cog in bot.cogs.values() for com in cog.walk_commands() if isinstance(com, commands.Command) and not com.hidden and command_check(com, ctx)]
+async def get_all_commands(bot: commands.Bot, ctx):
+  return [com for cog in bot.cogs.values() for com in cog.walk_commands() if isinstance(com, commands.Command) and not com.hidden and await command_check(com, ctx)]
 
 async def help_name_autocomplete(inter, string):
   everything = [str(cog.qualified_name).replace("_", " ") for cog in inter.bot.cogs.values()]
-  everything.extend([com.name for com in get_all_commands(inter.bot, inter)])
+  everything.extend([com.name for com in await get_all_commands(inter.bot, inter)])
 
   if string is None or string == "":
     return everything[:25]
@@ -53,10 +58,10 @@ def add_command_help(embed, com):
   embed.add_field(name=signature, value=description, inline=False)
 
 
-def generate_help_for_cog(cog: Base_Cog, ctx) -> Union[None, List[disnake.Embed]]:
+async def generate_help_for_cog(cog: Base_Cog, ctx) -> Union[None, List[disnake.Embed]]:
   if cog.hidden and not general_util.is_administrator(ctx): return None
 
-  coms = [com for com in cog.walk_commands() if isinstance(com, commands.Command) and not com.hidden and command_check(com, ctx)]
+  coms = [com for com in cog.walk_commands() if isinstance(com, commands.Command) and not com.hidden and await command_check(com, ctx)]
   number_of_coms = len(coms)
   if number_of_coms == 0: return None
 
@@ -94,7 +99,7 @@ class Help(Base_Cog):
 
     pages = []
     if name is not None:
-      all_commands = get_all_commands(self.bot, ctx)
+      all_commands = await get_all_commands(self.bot, ctx)
       command = disnake.utils.get(all_commands, name=name)
       if command is not None:
         emb = disnake.Embed(title="Help", colour=disnake.Color.green())
@@ -109,7 +114,7 @@ class Help(Base_Cog):
             name.lower() != cog.file.lower().replace("_", " "):
           continue
 
-      cog_pages = generate_help_for_cog(cog, ctx)
+      cog_pages = await generate_help_for_cog(cog, ctx)
       if cog_pages is not None:
         pages.extend(cog_pages)
 
@@ -124,7 +129,7 @@ class Help(Base_Cog):
   async def command_list(self, inter: disnake.CommandInteraction):
     await general_util.delete_message(self.bot, inter)
 
-    all_commands = get_all_commands(self.bot, inter)
+    all_commands = await get_all_commands(self.bot, inter)
     command_strings = [f"{config.base.command_prefix}{general_util.get_command_signature(com)}" for com in all_commands]
 
     pages = []

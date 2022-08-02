@@ -96,6 +96,7 @@ class Warden(Base_Cog):
   @commands.Cog.listener()
   async def on_message(self, message: disnake.Message):
     if message.author.bot: return
+    if message.author.id in config.ids.warden_whitelisted_users: return
     if isinstance(message.channel, disnake.DMChannel): return
 
     channel = message.channel

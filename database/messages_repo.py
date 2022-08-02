@@ -31,10 +31,11 @@ def get_author_of_last_message_metric(channel_id: int, thread_id: Optional[int])
   return int(user_id[0]) if user_id is not None else None
 
 def add_or_set_message(message: disnake.Message, commit: bool=True) -> Optional[Message]:
-  if message.guild is not None and isinstance(message.author, disnake.Member):
-    users_repo.get_or_create_member_if_not_exist(message.author)
-  else:
+  if message.guild is None or not isinstance(message.author, disnake.Member):
     return None
+
+  users_repo.get_or_create_member_if_not_exist(message.author)
+  can_collect_data = users_repo.can_collect_data(message.author.id, message.guild.id)
 
   thread = None
   channel = message.channel
@@ -53,12 +54,13 @@ def add_or_set_message(message: disnake.Message, commit: bool=True) -> Optional[
     message_it.use_for_metrics = use_for_metrics
     session.add(message_it)
   else:
-    if message_it.member_iid is None and message_it.guild_id is not None:
-      message_it.member_iid = users_repo.member_identifier_to_member_iid(int(message_it.author_id), int(message_it.guild_id))
     message_it.content = message.content
     message_it.edited_at = message.edited_at
 
-  update_attachments(message_it, message.attachments, commit=False)
+  if can_collect_data:
+    update_attachments(message_it, message.attachments, commit=False)
+  else:
+    message_it.content = None
 
   if commit:
     session.commit()
@@ -99,3 +101,10 @@ def delete_old_messages(days: int, commit: bool=True):
   session.query(Message).filter(Message.created_at <= threshold).delete()
   if commit:
     session.commit()
+
+def remove_message_data(user_id: int, guild_id: int):
+  msg_id_data = session.query(Message.id).filter(Message.author_id == str(user_id), Message.guild_id == str(guild_id)).all()
+  message_ids = [d[0] for d in msg_id_data]
+  session.query(Message).filter(Message.author_id == str(user_id), Message.guild_id == str(guild_id)).update({Message.content: None})
+  session.query(MessageAttachment).filter(MessageAttachment.message_id.in_(message_ids)).delete()
+  session.commit()

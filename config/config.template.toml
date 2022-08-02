@@ -30,6 +30,7 @@ mod_role = []
 log_channel = 838455904571621427
 warden_channels_to_look_for = []
 warden_report_channel = -1
+warden_whitelisted_users = []
 
 
 [cogs]
@@ -60,7 +61,7 @@ close_request_after_days_of_inactivity = 10
 max_cached_messages = 5000
 
 # Disable by setting to -1
-delete_left_users_after_days = 20
+delete_left_users_after_days = 2
 delete_messages_after_days = 60
 delete_audit_logs_after_days = 60
 

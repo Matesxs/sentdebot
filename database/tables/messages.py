@@ -57,6 +57,7 @@ class Message(database.base):
                guild_id=str(guild_id) if guild_id is not None else None,
                member_iid=member_iid,
                created_at=message.created_at,
+               edited_at=message.edited_at,
                channel_id=str(channel_id),
                thread_id=str(thread_id) if thread_id is not None else None,
                content=message.content)

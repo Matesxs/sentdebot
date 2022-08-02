@@ -153,6 +153,7 @@ class AdminTools(Base_Cog):
     messages = []
     number_of_messages = 0
     for message_item in message_iterator:
+      if message_item.content is None: continue
       if (search_term.lower() in message_item.content.lower()) \
           if not match_with_levenshtein else \
           (ratio(search_term.lower(), message_item.content.lower()) > 0.7):
@@ -197,7 +198,7 @@ class AdminTools(Base_Cog):
   @commands.max_concurrency(1, per=commands.BucketType.default)
   @cooldowns.huge_cooldown
   @commands.guild_only()
-  async def pull_data(self, inter: disnake.CommandInteraction):
+  async def pull_data(self, inter: disnake.CommandInteraction, days_back: float=commands.Param(default=None, description="Days back to pull data", min_value=0.0)):
     async def save_messages(message_it: disnake.abc.HistoryIterator):
       retries = 0
       while True:
@@ -221,7 +222,10 @@ class AdminTools(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
     logger.info("Starting members pulling")
 
-    members = inter.guild.fetch_members(limit=None)
+    if days_back is not None:
+      members = inter.guild.fetch_members(limit=None, after=datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+    else:
+      members = inter.guild.fetch_members(limit=None)
     async for member in members:
       users_repo.get_or_create_member_if_not_exist(member)
       await asyncio.sleep(0.2)
@@ -240,14 +244,14 @@ class AdminTools(Base_Cog):
 
     for channel in channels:
       if isinstance(channel, (disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel)):
-        messages_it = channel.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days))
+        messages_it = channel.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days if days_back is None else days_back))
         await save_messages(messages_it)
         messages_repo.session.commit()
 
         if hasattr(channel, "threads"):
           threads: List[disnake.Thread] = channel.threads
           for thread in threads:
-            messages_it = thread.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days))
+            messages_it = thread.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days if days_back is None else days_back))
             await save_messages(messages_it)
 
           messages_repo.session.commit()
@@ -268,6 +272,13 @@ class AdminTools(Base_Cog):
         pass
       return
     await general_util.generate_error_message(inter, Strings.admin_tools_purge_bot_messages_invalid_channel)
+
+  @essentials.sub_command(name="remove_data", description=Strings.admin_tools_remove_message_data_description)
+  @cooldowns.long_cooldown
+  @commands.guild_only()
+  async def remove_message_data(self, inter: disnake.CommandInteraction, member: disnake.Member=commands.Param(description="User for which delete the message data")):
+    messages_repo.remove_message_data(member.author.id, member.guild.id)
+    await general_util.generate_success_message(inter, Strings.admin_tools_remove_message_data_deleted)
 
   @commands.message_command(name="Remove bots message")
   @commands.check(general_util.is_administrator)

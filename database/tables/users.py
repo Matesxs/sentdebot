@@ -58,6 +58,8 @@ class Member(database.base):
   audit_logs = relationship("AuditLog", back_populates="member", uselist=True)
   messages = relationship("Message", back_populates="member", uselist=True)
 
+  collect_data = Column(Boolean, default=True, nullable=False, index=True)
+
   @classmethod
   def from_member(cls, member: disnake.Member):
     return cls(id=str(member.id), guild_id=str(member.guild.id), joined_at=member.joined_at, nick=member.display_name, icon_url=member.display_avatar.url, premium=member.premium_since is not None)
