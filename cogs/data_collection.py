@@ -182,10 +182,14 @@ class DataCollection(Base_Cog):
 
     for member in members:
       if member.id not in updated_users:
-        user_it = users_repo.get_user(member.id)
-        user_it.status = member.status
         updated_users.append(member.id)
-        await asyncio.sleep(0.05)
+
+        user_it = users_repo.get_user(member.id)
+        if user_it is None:
+          users_repo.get_or_create_user_if_not_exist(member)
+          continue
+
+        user_it.status = member.status
 
     users_repo.session.commit()
 
