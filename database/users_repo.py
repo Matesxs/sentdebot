@@ -37,10 +37,6 @@ def get_or_create_user_if_not_exist(user: Union[disnake.Member, disnake.User]) -
     session.add(user_it)
     session.commit()
   else:
-    if user_it.name != user.name:
-      user_it.name = user.name
-      session.commit()
-
     if isinstance(user, disnake.Member):
       if user_it.status != user.status:
         user_it.status = user.status
@@ -60,9 +56,6 @@ def get_or_create_member_if_not_exist(member: disnake.Member) -> Member:
     user_it.status = member.status
     session.commit()
 
-  if member_it.nick != member.display_name:
-    member_it.nick = member.display_name
-    session.commit()
   return member_it
 
 def set_member_left(member: disnake.Member):
