@@ -126,13 +126,18 @@ class DataCollection(Base_Cog):
 
   @commands.Cog.listener()
   async def on_member_update(self, before: disnake.Member, after: disnake.Member):
-    user_it = users_repo.get_member(after.id, after.guild.id)
-    if user_it is not None:
-      user_it.nick = after.display_name
-      user_it.icon_url = after.display_avatar.url
-      user_it.premium = after.premium_since is not None
+    user_it = users_repo.get_or_create_member_if_not_exist(after)
+    user_it.nick = after.display_name
+    user_it.icon_url = after.display_avatar.url
+    user_it.premium = after.premium_since is not None
 
     audit_log_repo.create_member_changed_log(before, after, commit=True)
+
+  @commands.Cog.listener()
+  async def on_user_update(self, _, after: disnake.User):
+    user_it = users_repo.get_or_create_user_if_not_exist(after)
+    user_it.name = after.name
+    users_repo.session.commit()
 
   @commands.Cog.listener()
   async def on_member_join(self, member: disnake.Member):
