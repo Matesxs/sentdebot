@@ -89,7 +89,7 @@ def create_member_changed_log(before: disnake.Member, after: disnake.Member, com
   if data.keys():
     get_or_create_member_if_not_exist(after)
 
-    user_id = after.author.id
+    user_id = after.id
     guild_id = after.guild.id if after.guild is not None else None
     member_iid = member_identifier_to_member_iid(user_id, guild_id)
 
