@@ -177,10 +177,17 @@ class DataCollection(Base_Cog):
 
   @tasks.loop(hours=1)
   async def user_update_task(self):
-    users = self.bot.get_all_members()
-    for user in users:
-      users_repo.get_or_create_member_if_not_exist(user)
-      await asyncio.sleep(0.05)
+    members = self.bot.get_all_members()
+    updated_users = []
+
+    for member in members:
+      if member.id not in updated_users:
+        user_it = users_repo.get_user(member.id)
+        user_it.status = member.status
+        updated_users.append(member.id)
+        await asyncio.sleep(0.05)
+
+    users_repo.session.commit()
 
 def setup(bot):
   bot.add_cog(DataCollection(bot))
