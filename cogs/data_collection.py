@@ -1,5 +1,6 @@
 import datetime
 import disnake
+import asyncio
 from disnake.ext import commands, tasks
 from typing import Optional
 
@@ -21,10 +22,16 @@ class DataCollection(Base_Cog):
       if not self.user_stats_task.is_running():
         self.user_stats_task.start()
 
+      if not self.user_update_task.is_running():
+        self.user_update_task.start()
+
   @commands.Cog.listener()
   async def on_ready(self):
     if not self.user_stats_task.is_running():
       self.user_stats_task.start()
+
+    if not self.user_update_task.is_running():
+      self.user_update_task.start()
 
   def cog_unload(self) -> None:
     if self.cleanup_taks.is_running():
@@ -33,12 +40,8 @@ class DataCollection(Base_Cog):
     if self.user_stats_task.is_running():
       self.user_stats_task.cancel()
 
-  def __del__(self):
-    if self.cleanup_taks.is_running():
-      self.cleanup_taks.cancel()
-
-    if self.user_stats_task.is_running():
-      self.user_stats_task.cancel()
+    if self.user_update_task.is_running():
+      self.user_update_task.start()
 
   @tasks.loop(minutes=5)
   async def user_stats_task(self):
@@ -166,6 +169,13 @@ class DataCollection(Base_Cog):
 
     users_repo.session.commit()
     logger.info("Cleanup finished")
+
+  @tasks.loop(hours=1)
+  async def user_update_task(self):
+    users = self.bot.get_all_members()
+    for user in users:
+      users_repo.get_or_create_member_if_not_exist(user)
+      await asyncio.sleep(0.05)
 
 def setup(bot):
   bot.add_cog(DataCollection(bot))

@@ -222,13 +222,9 @@ class AdminTools(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
     logger.info("Starting members pulling")
 
-    if days_back is not None:
-      members = inter.guild.fetch_members(limit=None, after=datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
-    else:
-      members = inter.guild.fetch_members(limit=None)
-    async for member in members:
+    members = inter.guild.members
+    for member in members:
       users_repo.get_or_create_member_if_not_exist(member)
-      await asyncio.sleep(0.2)
 
     logger.info("Starting channels pulling")
 

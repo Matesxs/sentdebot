@@ -1,6 +1,6 @@
 import disnake
 from typing import Union, Optional
-from sqlalchemy import Column, DateTime, String, UniqueConstraint, ForeignKey, Boolean
+from sqlalchemy import Column, DateTime, String, UniqueConstraint, ForeignKey, Boolean, Enum
 from sqlalchemy.orm import relationship
 
 from util import general_util
@@ -17,6 +17,7 @@ class User(database.base):
 
   is_bot = Column(Boolean, nullable=False)
   is_system = Column(Boolean, nullable=False)
+  status = Column(Enum(disnake.Status), nullable=True)
 
   members = relationship("Member", back_populates="user", uselist=True)
   help_requests = relationship("HelpThread", uselist=True)
@@ -26,7 +27,7 @@ class User(database.base):
 
   @classmethod
   def from_user(cls, user: Union[disnake.Member, disnake.User]):
-    return cls(id=str(user.id), created_at=user.created_at, is_bot=user.bot, is_system=user.system, name=user.name)
+    return cls(id=str(user.id), created_at=user.created_at, is_bot=user.bot, is_system=user.system, name=user.name, status=user.status if isinstance(user.status, disnake.Status) and isinstance(user, disnake.Member) else None)
 
   async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.User]:
     user = bot.get_user(int(self.id))
