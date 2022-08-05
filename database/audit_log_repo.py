@@ -1,3 +1,5 @@
+import datetime
+
 import disnake
 from typing import Optional
 
@@ -113,4 +115,9 @@ def auditlog_message_deleted(message: before_message_context.BeforeMessageContex
 
   item = AuditLog(user_id=str(message.author.id), guild_id=guild_id, member_iid=member_iid, log_type=AuditLogItemType.MESSAGE_DELETED, data={"message_id": message.id, "channel_id": channel_id, "content": message.content, "attachments": messages.message_to_message_data(message)["attachments"]})
   session.add(item)
+  session.commit()
+
+def delete_old_auditlogs(days_back: int):
+  threshold = datetime.datetime.utcnow() - datetime.timedelta(days=days_back)
+  session.query(AuditLog).filter(AuditLog.timestamp < threshold).delete()
   session.commit()

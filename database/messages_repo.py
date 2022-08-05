@@ -40,7 +40,7 @@ def add_or_set_message(message: disnake.Message, commit: bool=True) -> Optional[
     message_it.content = message.content
     message_it.edited_at = message.edited_at
 
-  if can_collect_data:
+  if not can_collect_data:
     message_it.content = None
     message_it.data = None
 

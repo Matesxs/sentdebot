@@ -1,5 +1,5 @@
 import disnake
-from disnake.ext import commands
+from disnake.ext import commands, tasks
 from typing import Optional, Union
 
 from config import config
@@ -10,6 +10,13 @@ from features.before_message_context import BeforeMessageContext
 class AuditLogListeners(Base_Cog):
   def __init__(self, bot):
     super(AuditLogListeners, self).__init__(bot, __file__)
+
+    if not self.cleanup_task.is_running():
+      self.cleanup_task.start()
+
+  def cog_unload(self) -> None:
+    if self.cleanup_task.is_running():
+      self.cleanup_task.cancel()
 
   @commands.Cog.listener()
   async def on_member_join(self, member: disnake.Member):
@@ -43,6 +50,11 @@ class AuditLogListeners(Base_Cog):
     if message.content.startswith(config.base.command_prefix): return
 
     audit_log_repo.auditlog_message_deleted(message)
+
+  @tasks.loop(hours=24)
+  async def cleanup_task(self):
+    if config.essentials.delete_audit_logs_after_days >= 0:
+      audit_log_repo.delete_old_auditlogs(config.essentials.delete_audit_logs_after_days)
 
 def setup(bot):
   bot.add_cog(AuditLogListeners(bot))
