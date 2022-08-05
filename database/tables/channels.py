@@ -19,7 +19,7 @@ class TextThread(database.base):
   locked = Column(Boolean, nullable=False)
 
   channel = relationship("TextChannel", back_populates="threads", uselist=False)
-  messages = relationship("Message", primaryjoin="and_(foreign(TextThread.id) == Message.thread_id, foreign(TextThread.channel_id) == Message.channel_id)", viewonly=True, uselist=True)
+  messages = relationship("Message", back_populates="thread", uselist=True)
 
   @classmethod
   def from_thread(cls, thread: disnake.Thread):

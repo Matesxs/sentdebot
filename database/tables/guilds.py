@@ -13,7 +13,7 @@ class Guild(database.base):
 
   text_channels = relationship("TextChannel", back_populates="guild", uselist=True)
   members = relationship("Member", back_populates="guild", uselist=True)
-  audit_logs = relationship("AuditLog", uselist=True)
+  audit_logs = relationship("AuditLog", back_populates="guild", uselist=True)
 
   @classmethod
   def from_guild(cls, guild: disnake.Guild):

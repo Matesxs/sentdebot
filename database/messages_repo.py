@@ -3,28 +3,11 @@ import datetime
 from typing import List, Tuple, Optional, Iterator
 
 from database import session
-from database.tables.messages import Message, MessageAttachment
+from database.tables.messages import Message
 from database import users_repo, channels_repo
 
 def get_message(message_id: int) -> Optional[Message]:
   return session.query(Message).filter(Message.id == str(message_id)).one_or_none()
-
-def update_attachments(message: Message, new_attachments: List[disnake.Attachment], commit: bool=True):
-  current_attachments: List[MessageAttachment] = message.attachments
-  current_urls = [att.url for att in current_attachments]
-  new_urls = [att.url for att in new_attachments]
-  att_to_create = [att for att in new_attachments if att.url not in current_urls]
-
-  for att_it in current_attachments:
-    if att_it.url not in new_urls:
-      session.delete(att_it)
-
-  for att in att_to_create:
-    item = MessageAttachment(id=str(att.id), message_id=message.id, url=att.url)
-    session.add(item)
-
-  if commit:
-    session.commit()
 
 def get_author_of_last_message_metric(channel_id: int, thread_id: Optional[int]) -> Optional[int]:
   user_id = session.query(Message.author_id).filter(Message.channel_id == str(channel_id), Message.thread_id == (str(thread_id) if thread_id is not None else None), Message.use_for_metrics == True).order_by(Message.created_at.desc()).first()
@@ -58,9 +41,8 @@ def add_or_set_message(message: disnake.Message, commit: bool=True) -> Optional[
     message_it.edited_at = message.edited_at
 
   if can_collect_data:
-    update_attachments(message_it, message.attachments, commit=False)
-  else:
     message_it.content = None
+    message_it.data = None
 
   if commit:
     session.commit()
@@ -103,8 +85,5 @@ def delete_old_messages(days: int, commit: bool=True):
     session.commit()
 
 def remove_message_data(user_id: int, guild_id: int):
-  msg_id_data = session.query(Message.id).filter(Message.author_id == str(user_id), Message.guild_id == str(guild_id)).all()
-  message_ids = [d[0] for d in msg_id_data]
-  session.query(Message).filter(Message.author_id == str(user_id), Message.guild_id == str(guild_id)).update({Message.content: None})
-  session.query(MessageAttachment).filter(MessageAttachment.message_id.in_(message_ids)).delete()
+  session.query(Message).filter(Message.author_id == str(user_id), Message.guild_id == str(guild_id)).update({Message.content: None, Message.data: None})
   session.commit()

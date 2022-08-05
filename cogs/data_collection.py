@@ -1,13 +1,12 @@
-import datetime
 import disnake
-import asyncio
 from disnake.ext import commands, tasks
-from typing import Optional
+from typing import Union
 
 from util.logger import setup_custom_logger
 from config import config
-from database import messages_repo, audit_log_repo, users_repo, help_threads_repo, user_metrics_repo, guilds_repo, channels_repo
+from database import messages_repo, users_repo, user_metrics_repo, guilds_repo, channels_repo
 from features.base_cog import Base_Cog
+from features import before_message_context
 
 logger = setup_custom_logger(__name__)
 
@@ -79,59 +78,32 @@ class DataCollection(Base_Cog):
   @commands.Cog.listener()
   async def on_message(self, message: disnake.Message):
     if message.guild is None: return
-    if message.author.bot: return
+    if message.author.bot or message.author.system: return
     if message.content.startswith(config.base.command_prefix): return
-
-    thread = None
-    if isinstance(message.channel, disnake.Thread):
-      thread = message.channel
-
-    thread_id = thread.id if thread is not None else None
-    if thread is not None:
-      if help_threads_repo.thread_exists(thread_id):
-        help_threads_repo.update_thread_activity(thread_id, datetime.datetime.utcnow(), commit=False)
 
     messages_repo.add_or_set_message(message, commit=True)
 
-  async def handle_message_edited(self, before: Optional[disnake.Message], after: disnake.Message):
+  async def handle_message_edited(self, _, after: disnake.Message):
     if after.guild is None: return
-    if after.author.bot: return
+    if after.author.bot or after.author.system: return
     if after.content.startswith(config.base.command_prefix): return
 
     if not users_repo.can_collect_data(after.author.id, after.guild.id):
       return
 
-    message_item = messages_repo.get_message(after.id)
-    if before is None:
-      before = message_item
+    messages_repo.add_or_set_message(after)
 
-    after_attachments = [att.url for att in after.attachments]
-
-    if before is not None:
-      if before.content == after.content and [att.url for att in before.attachments] == after_attachments:
-        return
-
-    await audit_log_repo.create_message_edited_log(self.bot, before, after)
-
-    messages_repo.add_or_set_message(after, commit=True)
+  async def handle_message_deleted(self, message: Union[disnake.RawMessageDeleteEvent, before_message_context.BeforeMessageContext]):
+    message_id = message.message_id if isinstance(message, disnake.RawMessageDeleteEvent) else message.id
+    messages_repo.delete_message(message_id, commit=True)
 
   @commands.Cog.listener()
-  async def on_message_delete(self, message: disnake.Message):
-    if message.guild is None: return
-    if message.author.bot: return
-    if message.content.startswith(config.base.command_prefix): return
-
-    messages_repo.delete_message(message.id, commit=False)
-    audit_log_repo.create_message_deleted_log(message)
-
-  @commands.Cog.listener()
-  async def on_member_update(self, before: disnake.Member, after: disnake.Member):
+  async def on_member_update(self, _, after: disnake.Member):
     user_it = users_repo.get_or_create_member_if_not_exist(after)
     user_it.nick = after.display_name
     user_it.icon_url = after.display_avatar.url
     user_it.premium = after.premium_since is not None
-
-    audit_log_repo.create_member_changed_log(before, after, commit=True)
+    users_repo.session.commit()
 
   @commands.Cog.listener()
   async def on_user_update(self, _, after: disnake.User):
@@ -162,8 +134,6 @@ class DataCollection(Base_Cog):
     logger.info("Starting cleanup")
     if config.essentials.delete_left_users_after_days > 0:
       users_repo.delete_left_members(config.essentials.delete_left_users_after_days, commit=False)
-    if config.essentials.delete_audit_logs_after_days > 0:
-      audit_log_repo.delete_old_logs(config.essentials.delete_audit_logs_after_days, commit=False)
     if config.essentials.delete_messages_after_days > 0:
       messages_repo.delete_old_messages(config.essentials.delete_messages_after_days, commit=False)
 

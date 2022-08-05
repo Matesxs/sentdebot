@@ -2,9 +2,10 @@
 import disnake
 from disnake.ext import commands
 from pathlib import Path
-from typing import Optional
-from features.base_bot import BaseAutoshardedBot
+from typing import Optional, Union
 
+from features.before_message_context import BeforeMessageContext
+from features.base_bot import BaseAutoshardedBot
 from features.reaction_context import ReactionContext
 
 class Base_Cog(commands.Cog):
@@ -17,4 +18,7 @@ class Base_Cog(commands.Cog):
     pass
 
   async def handle_message_edited(self, before: Optional[disnake.Message], after: disnake.Message):
+    pass
+
+  async def handle_message_deleted(self, message: Union[disnake.RawMessageDeleteEvent, BeforeMessageContext]):
     pass

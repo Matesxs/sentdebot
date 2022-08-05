@@ -1,6 +1,6 @@
 import disnake
 from typing import Optional
-from sqlalchemy import Column, DateTime, String, ForeignKey, Boolean
+from sqlalchemy import Column, DateTime, String, ForeignKey, Boolean, JSON
 from sqlalchemy.orm import relationship
 
 from database import database, BigIntegerType
@@ -8,15 +8,12 @@ from database import users_repo
 from util import general_util
 from features.base_bot import BaseAutoshardedBot
 
-class MessageAttachment(database.base):
-  __tablename__ = "message_attachments"
-
-  id = Column(String, primary_key=True, unique=True)
-
-  message_id = Column(String, ForeignKey("messages.id", ondelete="CASCADE"), index=True, nullable=False)
-  url = Column(String, index=True, nullable=False)
-
-  message = relationship("Message", back_populates="attachments", uselist=False)
+def message_to_message_data(message):
+  return {
+      "attachments": [
+        {"filename": att.filename, "url": att.url} for att in message.attachments
+      ]
+    }
 
 class Message(database.base):
   __tablename__ = "messages"
@@ -34,10 +31,11 @@ class Message(database.base):
 
   channel_id = Column(String, ForeignKey("text_channels.id", ondelete="CASCADE"), index=True, nullable=False)
   thread_id = Column(String, ForeignKey("text_threads.id", ondelete="CASCADE"), index=True, nullable=True)
-  content = Column(String)
-
-  attachments = relationship("MessageAttachment", back_populates="message", uselist=True)
   channel = relationship("TextChannel", back_populates="messages", uselist=False)
+  thread = relationship("TextThread", back_populates="messages", uselist=False)
+
+  content = Column(String, nullable=True, index=True)
+  data = Column(JSON, nullable=True)
 
   use_for_metrics = Column(Boolean, nullable=False, default=False)
 
@@ -60,7 +58,8 @@ class Message(database.base):
                edited_at=message.edited_at,
                channel_id=str(channel_id),
                thread_id=str(thread_id) if thread_id is not None else None,
-               content=message.content)
+               content=message.content,
+               data=message_to_message_data(message))
 
   async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.Message]:
     message = await general_util.get_or_fetch_message(bot, None, int(self.id))

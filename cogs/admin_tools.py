@@ -197,7 +197,6 @@ class AdminTools(Base_Cog):
   @essentials.sub_command(description=Strings.admin_tools_pull_data_description)
   @commands.max_concurrency(1, per=commands.BucketType.default)
   @cooldowns.huge_cooldown
-  @commands.guild_only()
   async def pull_data(self, inter: disnake.CommandInteraction, days_back: float=commands.Param(default=None, description="Days back to pull data", min_value=0.0)):
     async def save_messages(message_it: disnake.abc.HistoryIterator):
       retries = 0
@@ -222,15 +221,19 @@ class AdminTools(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
     logger.info("Starting members pulling")
 
-    members = inter.guild.members
-    for member in members:
-      users_repo.get_or_create_member_if_not_exist(member)
+    for guild in self.bot.guilds:
+      members = guild.members
+      for member in members:
+        if member.bot or member.system: continue
+        users_repo.get_or_create_member_if_not_exist(member)
 
     logger.info("Starting channels pulling")
+    channels = []
+    for guild in self.bot.guilds:
+      channels.extend(await guild.fetch_channels())
 
-    channels = await inter.guild.fetch_channels()
     for channel in channels:
-      if isinstance(channel, (disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel)):
+      if isinstance(channel, (disnake.VoiceChannel, disnake.StageChannel, disnake.TextChannel, disnake.ForumChannel, disnake.Thread)):
         channels_repo.get_or_create_text_channel_if_not_exist(channel)
         await asyncio.sleep(0.2)
 
@@ -239,7 +242,7 @@ class AdminTools(Base_Cog):
     logger.info("Starting messages pulling")
 
     for channel in channels:
-      if isinstance(channel, (disnake.TextChannel, disnake.VoiceChannel, disnake.StageChannel, disnake.ForumChannel)):
+      if isinstance(channel, (disnake.VoiceChannel, disnake.StageChannel, disnake.TextChannel, disnake.ForumChannel, disnake.Thread)):
         messages_it = channel.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days if days_back is None else days_back))
         await save_messages(messages_it)
         messages_repo.session.commit()
@@ -249,8 +252,7 @@ class AdminTools(Base_Cog):
           for thread in threads:
             messages_it = thread.history(limit=None, oldest_first=True, after=datetime.datetime.utcnow() - datetime.timedelta(days=config.essentials.delete_messages_after_days if days_back is None else days_back))
             await save_messages(messages_it)
-
-          messages_repo.session.commit()
+            messages_repo.session.commit()
 
     logger.info("Data pulling completed")
 

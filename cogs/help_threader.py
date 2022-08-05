@@ -38,6 +38,14 @@ class HelpThreader(Base_Cog):
     if not self.close_unactive_threads_task.is_running():
       self.close_unactive_threads_task.start()
 
+  @commands.Cog.listener()
+  async def on_message(self, message: disnake.Message):
+    if isinstance(message.channel, disnake.Thread):
+      thread = message.channel
+
+      if help_threads_repo.thread_exists(thread.id):
+        help_threads_repo.update_thread_activity(thread.id, datetime.datetime.utcnow())
+
   @tasks.loop(hours=24)
   async def close_unactive_threads_task(self):
     logger.info("[Auto close task] Starting cleaning cycle")

@@ -6,9 +6,12 @@ import datetime
 from database import database, BigIntegerType
 
 class AuditLogItemType(enum.Enum):
-  MESSAGE_DELETED = 0
-  MESSAGE_EDITED = 1
+  USER_UPDATED = 1
   MEMBER_UPDATED = 2
+  MEMBER_JOINED = 3
+  MEMBER_LEFT = 4
+  MESSAGE_EDITED = 5
+  MESSAGE_DELETED = 6
 
 class AuditLog(database.base):
   __tablename__ = "audit_log"
@@ -22,6 +25,7 @@ class AuditLog(database.base):
 
   member = relationship("Member", back_populates="audit_logs", uselist=False)
   user = relationship("User", back_populates="audit_logs", uselist=False)
+  guild = relationship("Guild", back_populates="audit_logs", uselist=False)
 
   log_type = Column(Enum(AuditLogItemType), index=True)
   data = Column(JSON, nullable=True)
