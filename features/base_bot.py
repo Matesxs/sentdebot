@@ -31,8 +31,6 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
       sync_commands=True,
       max_messages=config.essentials.max_cached_messages
     )
-    self.initialized = False
-
     self.last_error = None
     self.start_time = datetime.datetime.utcnow()
 
@@ -58,9 +56,6 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     logger.info("Defaul modules loaded")
 
   async def on_ready(self):
-    if self.initialized: return
-    self.initialized = True
-
     logger.info(f"Logged in as: {self.user} (ID: {self.user.id}) on {self.shard_count} shards")
     await self.change_presence(activity=disnake.Game(name=config.base.status_message, type=0), status=disnake.Status.online)
     log_channel = await general_util.get_or_fetch_channel(self, config.ids.log_channel)
